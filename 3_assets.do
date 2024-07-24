@@ -68,6 +68,6 @@ forvalues i = 1/`max_assets' {
 
 pca liquid_asset_2_ liquid_asset_3_ liquid_asset_4_ liquid_asset_5_ liquid_asset_6_ liquid_asset_7_ liquid_asset_8_ liquid_asset_9_ liquid_asset_10_ liquid_asset_11_ liquid_asset_12_
 predict liquid_assetindex, score
-label variable liquid_assetindex "Asset index (PCA)"
+label variable liquid_assetindex "Liquid asset index (PCA)"
 
 
