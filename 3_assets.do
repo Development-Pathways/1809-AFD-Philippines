@@ -16,18 +16,11 @@ use "Processed/FSP Baseline Processed.dta", clear
 rename Q13_3C12V tot_asset_value
 */
 
-
 //Number of non-farm assets
-
 /*
 egen temp = rowtotal(Q13_3A*)
 recode temp (17/max = 17 "17+"), gen(n_assets)
-
 */
-
-
-
-
 
 local max_assets = 12 
 
