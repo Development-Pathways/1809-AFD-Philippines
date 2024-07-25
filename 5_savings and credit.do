@@ -1,6 +1,6 @@
-// date: 1/07/2024
+// date: 24/07/2024
 // project: 1809 ADF Philippines - Assignment 1: impact evaluation 
-// author: silvia
+// author: nayha
 // purpose: clean data from Walang Gutom RCT baseline survey, provided by ADB through AFD 
 // 			process savings and credit module
 
@@ -9,9 +9,11 @@ cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Eval
 
 use "Processed/FSP Baseline Processed.dta", clear
 
-//total savings: tot_savings
-//total borrowing: tot_borrow
+* savings and banking (module 14) 
+rename Q_575 tot_savings
 
+* borrowing (module 15)
+rename Q15_1_CT tot_borrow
 
 *Net savings
 
@@ -28,3 +30,6 @@ replace net_savings=tot_savings if tot_borrow==-8
 
 
 * Debt for bad uses or from bad source
+
+
+save "Processed/FSP Baseline Processed.dta", replace
