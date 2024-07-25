@@ -13,8 +13,18 @@ use "Processed/FSP Baseline Processed.dta", clear
 //total borrowing: tot_borrow
 
 
+*Net savings
+
 gen net_savings=.
 replace net_savings=tot_savings-tot_borrow if tot_savings!=. & tot_savings!=0
 replace net_savings=tot_savings if tot_borrow==-8
 
 
+* Credit from "good sources" for "good uses"
+
+
+
+
+
+
+* Debt for bad uses or from bad source
