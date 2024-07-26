@@ -19,6 +19,8 @@ gen net_savings=.
 replace net_savings=tot_savings-tot_borrow if tot_savings!=. & tot_savings!=0
 replace net_savings=tot_savings if tot_borrow==-8
 
+tabstat tot_savings if tot_savings!=. & tot_savings!=0, by(MUN)
+tabstat net_savings, by(MUN)
 
 * Credit from "good sources" for "good uses"
 
