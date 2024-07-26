@@ -1,6 +1,6 @@
-// date: 1/07/2024
+// date: 24/07/2024
 // project: 1809 ADF Philippines - Assignment 1: impact evaluation 
-// author: silvia
+// author: nayha
 // purpose: clean data from Walang Gutom RCT baseline survey, provided by ADB through AFD 
 // 			process asset module
 
@@ -9,18 +9,12 @@ cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Eval
 
 use "Processed/FSP Baseline Processed.dta", clear
 
-
-
 //Value of assets
-/*
 rename Q13_3C12V tot_asset_value
-*/
 
 //Number of non-farm assets
-/*
 egen temp = rowtotal(Q13_3A*)
 recode temp (17/max = 17 "17+"), gen(n_assets)
-*/
 
 local max_assets = 12 
 
@@ -70,4 +64,4 @@ pca liquid_asset_2_ liquid_asset_3_ liquid_asset_4_ liquid_asset_5_ liquid_asset
 predict liquid_assetindex, score
 label variable liquid_assetindex "Liquid asset index (PCA)"
 
-
+save "Processed/FSP Baseline Processed.dta", replace
