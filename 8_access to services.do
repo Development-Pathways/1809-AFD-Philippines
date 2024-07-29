@@ -86,3 +86,5 @@ gen school_age = (age >= 5 & age <= 17)
 egen total_school_age = total(school_age)
 egen total_attend_school = total(attend_school)
 gen prop_attend_school = total_attend_school / total_school_age
+
+
