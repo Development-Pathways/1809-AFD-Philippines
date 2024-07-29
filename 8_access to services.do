@@ -38,8 +38,9 @@ preserve
 
 use "FSP Baseline/FSP Baseline 2023 Section 18. Pregnant or new mom women (delivered over the past 24 months).dta", clear
 
-duplicates report INTNO
-duplicates drop INTNO, force
+duplicates report INTNO Q18
+duplicates drop INTNO Q18, force
+sort INTNO
 rename INTNO hhid
 tempfile pregnant
 save `pregnant', replace
@@ -62,3 +63,26 @@ gen is_pregnant = 0
 replace is_pregnant = 1 if Q18_A!=.
 count if is_pregnant == 1
 
+*Combination of child and pregnant mother
+
+
+*Access to child care
+
+
+
+*Access to information (Dummy if has phone, radio, tv)
+gen access_info = 0
+replace access_info = 1 if Q13_3A2!= 0 | Q13_3A3 != 0 | Q13_3A4 != 0
+label variable access_info "Access to info (radio, tv, phone)"
+label define access_info_lbl 0 "No" 1 "Yes"
+label values access_info access_info_lbl
+
+
+*Number of school aged children attending school, school age  5-17
+gen attend_school = (age >= 5 & age <= 17) &  (edu!=2)
+
+*Proportion of school aged children attending school, school age  5-17
+gen school_age = (age >= 5 & age <= 17)
+egen total_school_age = total(school_age)
+egen total_attend_school = total(attend_school)
+gen prop_attend_school = total_attend_school / total_school_age
