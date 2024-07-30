@@ -58,10 +58,10 @@ foreach var of local service_vars {
     replace received_service = 1 if `var' != 95 & !missing(`var')
 }
 
-*variable to check how many pregnant women
-gen is_pregnant = 0
-replace is_pregnant = 1 if Q18_A!=.
-count if is_pregnant == 1
+*variable to check how many pregnant women at household level
+gen has_pregnant = 0
+replace has_pregnant = 1 if Q18_A!=.
+count if has_pregnant == 1
 
 *Combination of child and pregnant mother
 
