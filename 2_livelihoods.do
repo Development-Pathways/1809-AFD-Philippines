@@ -153,22 +153,13 @@ gen other_other = ( Q6_5_1A	== 1 | ///
 					Q6_5_10A== 1 | ///
 					Q6_5_11A== 1 )
 					
-egen other_sources = max(other_progs other_assistance other_pension other_rentals other_interests)
+egen other_sources = rowmax(other_progs other_assistance other_pension other_rentals other_interests)
 					
 * number of income sources
 
 egen n_sources = rowtotal(hh_n_jobs crop livestock fishing foodservice wholesale manufacturing trasportation other_activ other_progs other_assistance other_pension other_rentals other_interests)		
 
 egen n_sources_alt = rowtotal(hh_n_jobs crop livestock fishing foodservice wholesale manufacturing trasportation other_activ other_sources)		
-
-
-
-
-	
-	
-
-
-
 
 save "Processed/FSP Baseline Processed.dta", replace
 

@@ -87,4 +87,4 @@ egen total_school_age = total(school_age)
 egen total_attend_school = total(attend_school)
 gen prop_attend_school = total_attend_school / total_school_age
 
-
+save "Processed/FSP Baseline Processed.dta", replace

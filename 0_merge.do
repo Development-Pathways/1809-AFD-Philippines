@@ -8,9 +8,9 @@ cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Eval
 
 * individual level data
 use "FSP Baseline/FSP Baseline 2023 Section 2. Household members information and Employment.dta", clear // ID 38,687
-*merge 1:1 ID using "FSP Baseline/FSP Baseline 2023 Section 12. Child Health.dta", nogen // ID 3,188
+merge 1:1 ID using "FSP Baseline/FSP Baseline 2023 Section 12. Child Health.dta", nogen // ID 3,188
 *merge 1:1 ID using "FSP Baseline/FSP Baseline 2023 Section 11. Child Nutrition.dta", nogen // ID 1,033
-*merge 1:1 ID using "FSP Baseline/FSP Baseline 2023 Section 17. Children Born in the Last 12 Months.dta", nogen // ID 456
+merge 1:1 ID using "FSP Baseline/FSP Baseline 2023 Section 17. Children Born in the Last 12 Months.dta", nogen // ID 456
 *merge 1:1 ID using "FSP Baseline/FSP Baseline 2023 Section 18. Pregnant or new mom women (delivered over the past 24 months).dta" // no ID 957
 
 * household level data

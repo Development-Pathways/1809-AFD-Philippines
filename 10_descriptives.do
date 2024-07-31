@@ -11,7 +11,9 @@ cd "$data_folder/Tables"
 
 * IND LEVEL
 
-foreach var of varlist age10yrs ethnicity marital edu work nowork_reason work_type* sector* agri_work wage_work unfit_work {
+global ind_vars age10yrs ethnicity marital edu work nowork_reason work_type* sector* agri_work wage_work unfit_work bop
+
+foreach var of varlist $ind_vars {
 	table (provmun) (`var'), statistic(percent, across(`var')) nformat(%5.1f)
 	collect export "baseline-stats.xlsx", as(xlsx) sheet("`var'", replace) cell(B5) modify
 	putexcel set "baseline-stats.xlsx", sheet("`var'") modify
@@ -35,22 +37,63 @@ foreach var of varlist age10yrs ethnicity marital edu work nowork_reason work_ty
 }		
 */
 
+**# Bookmark #2
 * HH LEVEL
 keep if rel==1
 
-* differences between tondo (urban) and other study areas (rural) 
+**********************
+* Modules' shortcuts *
+**********************
 
-global general /*cluster_size*/ hhsize sex edu hh_maxedu hh_totedu hh_eduratio /*km_to_fixed_vendor*/
-global income hh_active hh_work hh_wawork crop livestock fishing foodservice wholesale manufacturing trasportation other_activ hh_farm_income s_hh_vuln_income n_sources HHI 
-global consumption fsec_score fooddivindex pcfoodcons
-global assets tot_asset_value assetindex n_assets liquid_assetindex
+global general /*cluster_size*/ hhsize_bin sex marital ethnicity  /*km_to_fixed_vendor*/
+
+global human_capital edu hh_maxedu hh_totedu hh_eduratio work_type hh_fitadults hh_depratio hh_fitwork  hh_emprate hh_unfit_work hh_child_lab hh_n_child_lab hh_n_vul_lab
+
+global income HHTIncome crop CROPTOT1 livestock LIVESTOCKTOT1 fishing FISHINGTOT1 foodservice FOODSERVICETOT1 wholesale WHOLESALETOT1 manufacturing MANUFACTURINGTOT1 trasportation TRANSPORTATIONTOT1 other_activ OTHERTOT1 other_sources OTHERPROG1 INCOMERECEIPTS1 n_sources_alt INCOMEALLSOURCES1 hh_farm_income hh_vuln_income hh_livelihood hh_income n_sources s_hh_vuln_income s_hh_vuln_livelihood HHI_income HHI_livelihood hh_n_jobs 
+
+* global consumption fsec_score fooddivindex pcfoodcons ...
+
+* global assets tot_asset_value assetindex n_assets liquid_assetindex ...
+
+global debt tot_savings tot_borrow any_debt good_source bad_source good_reason bad_reason good_debt bad_debt 
+
+global shocks hunger hunger_freq FIES_8 FIES_24 shop_diversity n_shocks any_shock n_disatster any_disaster n_climshock any_climshock n_strategies negative_strat n_neg_strat // ... 
+
+global socpro hh_safetynet hh_safetynet2 hh_inclusion n_programs hh_socinsur 
+
+global services hh_treat_child hh_ill_child //...
+
+* global resilience ...
+
+keep hhid pid MUN provmun tondo $general $human_capital $income $consumption $assets $debt $shocks $socpro $services $resilience
+
+	ds, has(type numeric)  // identify vars of the same type
+	foreach var in `r(varlist)' {     
+		***
+	}
+
+
+************************
+* Tondo vs other areas *
+************************
 
 iebaltab $general $income $assets , grpvar(tondo) /*vce(cluster location) balmiss(groupmean)*/ total replace save("urban_rural.xlsx")
 		
 reg tondo $general $income $assets , robust
 outreg2 using "urban_rural_reg.xlsx.xls", replace
 
+**********
+* Graphs *
+**********
 
+
+
+
+
+/*
+************************
+* Treatment vs Control *
+************************
 
 * mean sd min max freq by location and treatment
 gen treatment = 1 // change to treatment var
@@ -78,4 +121,5 @@ foreach var of varlist $varlist{
 	putexcel B2 = "Mean, standard deviation, minimum, maximum amd number of observations `var' by location",  font("calibri" , 14)
 	putexcel B3 = "Source: Walang Gutom RCT Baseline ($S_DATE)",  font("calibri" , 9)
 }
+*/
 

@@ -13,12 +13,12 @@ use "Processed/FSP Baseline Merged.dta", clear
 gen tondo = (MUN==138060)
 label define tondo 0 "Other" 1 "Tondo"
 label values tondo tondo
+egen provmun = group(PROVINCE MUN), label
 
 * roster (sociodemographic) 
 
 * individual
 
-egen provmun = group(PROVINCE MUN), label
 recode Q2D (1=0 "Male") (2=1 "Female"), gen(sex)
 rename Q2E age
 recode age	(0/9=0 "0-9") (10/19=1 "10-19") (20/29=2 "20-29") (30/39=3 "30-39") ///
@@ -60,16 +60,22 @@ rename NO_MEM hhsize
 
 recode hhsize (1=1 "1 Person") (2=2 "2 Persons") (3/5=3 "3-5 Persons")   (6/7=4 "6-7 Persons") (8/10=5 "8-10 Persons") (11/max =6 "More than 10 persons") , gen(hhsize_bin)	
 	
-* household head - add labels or recode
+/* household head - add labels or recode
 foreach x in sex age edu marital ethnicity work {
     by hhid, sort: egen head_`x' = max(cond(rel == 1, `x', .))
 }
+*/
 
 * max education level in household
 egen hh_maxedu = max(edu) if edu!=98, by(hhid)
 
 * total yrs of education in household
 egen hh_totedu = sum(edu) if edu!=98, by(hhid)
+
+* other household characteristics
+	* number of children
+	* skipped generation
+	* ...
 
 * share of school-age children in education // VALIDATE
 egen hh_schooling = sum(age>=12 & age<18 & nowork_reason==8), by(hhid)	
@@ -149,7 +155,7 @@ replace child_lab_hrs = 1 if (age>=12 & age<=14) & (paid_work==1 & work_hrs>14) 
 replace child_lab_hrs = 1 if (age>=5 & age<=14) & (paid_work==0 & work_hrs>21) // children 5-11 and 12-14 in unpaid work for at least 21 hrs
 replace child_lab_hrs = 1 if (age>=15 & age<=17) & (paid_work==1 & work_hrs>43) // children 15-17 in paid work for at least 43 hrs - wrk hrs refer to any job (they may do <43 hrs paid plus hrs of unpaid work)
 
-assert child_lab==child_lab_hrs
+* assert child_lab==child_lab_hrs
 
 * vulnerable labour
 
