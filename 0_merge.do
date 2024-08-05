@@ -3,8 +3,15 @@
 // author: silvia
 // purpose: merge datafiles from Walang Gutom RCT baseline survey, provided by ADB through AFD
 
+clear all
+set maxvar 32767 
+
 * change directory
 cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Evaluation (Assignment 1)/Data"
+
+*	import delimited "FSP Baseline/FSP BASELINE 2023 CAPI_2024_01_08_15_30.csv", clear
+
+*	keep INTNO q13_1_a1-q13_2_c5
 
 * individual level data
 use "FSP Baseline/FSP Baseline 2023 Section 2. Household members information and Employment.dta", clear // ID 38,687
@@ -16,7 +23,10 @@ merge 1:1 ID using "FSP Baseline/FSP Baseline 2023 Section 17. Children Born in 
 * household level data
 merge m:1 INTNO using "FSP Baseline/FSP Baseline 2023 Main Questionnaire Dataset.dta", nogen // INTNO 5,655
 
-order INTNO PROVINCE MUN BRGY CLUSTER LATITUDE LONGITUDE TYPE, first
+* variables provided by ADB : km_to_fixed_vendor treatment final_cluster cluster_size
+merge m:1 INTNO using "FSP Baseline/AFD_request_Aug1.dta" // 335 households not matched 
+
+order INTNO PROVINCE MUN BRGY CLUSTER final_cluster cluster_size treatment, first
 
 * export summary
 //estpost sum _all

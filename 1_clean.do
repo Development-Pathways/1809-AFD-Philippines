@@ -24,11 +24,10 @@ rename Q2E age
 recode age	(0/9=0 "0-9") (10/19=1 "10-19") (20/29=2 "20-29") (30/39=3 "30-39") ///
 			(40/49=4 "40-49") (50/59=5 "50-59") (60/69=6 "60-69") ///
 			(70/79=7 "70-79") (80/max=8 "80+"), gen(age10yrs)
-rename Q2H edu // temporary - recode
-* recode Q2H ... , gen(edu)
+recode Q2H (0/1 = 0 "No grade completed") (2/6 = 1 "Incomplete Primary") (7 = 3 "Primary") (8/10 = 4 "Incomplete Junior High") (11 = 5 "Junior High") (12 = 6 "1st year Senior High") (13 = 7 "Senior High") (14/17 = 8 "Tertiary") (18/max =.) , gen(edu)
 rename Q2G rel 
 recode Q2I (5/max = .), gen(marital)
-recode Q2J (88/max = .), gen(ethnicity)
+recode Q2J (12=1 "Tagalog") (4=2 "Ilocano") (1=3 "Bicolano") (6=4 "Cebuano") (2 3 5 7/11 13/15 88 = 5 "Other") (89/max = .), gen(ethnicity)
 
 * employment
 
@@ -67,7 +66,8 @@ foreach x in sex age edu marital ethnicity work {
 */
 
 * max education level in household
-egen hh_maxedu = max(edu) if edu!=98, by(hhid)
+egen hh_maxedu = max(edu) if !missing(edu), by(hhid)
+label values hh_maxedu edu 
 
 * total yrs of education in household
 egen hh_totedu = sum(edu) if edu!=98, by(hhid)
@@ -75,7 +75,7 @@ egen hh_totedu = sum(edu) if edu!=98, by(hhid)
 * other household characteristics
 	* number of children
 	* skipped generation
-	* ...
+	* single parent 
 
 * share of school-age children in education // VALIDATE
 egen hh_schooling = sum(age>=12 & age<18 & nowork_reason==8), by(hhid)	

@@ -13,7 +13,9 @@ recode Q3I (0/3 6/max = 0 "vulnerable") (4/5 = 1 "non-vulnerable"), gen(bop_1)
 recode Q3P (0/3 6/max = 0 "vulnerable") (4/5 = 1 "non-vulnerable"), gen(bop_2)
 
 egen bop = rowmax(bop_1 bop_2) // non-vulnerable if at least one b.o.p. is non-vulnerable
-
+label define bop 0 "Vulnerable" 1 "Non-vulnerable"
+label values bop bop
+label variable bop "Basis of payment"
 
 * income from work
 /*
@@ -154,6 +156,8 @@ gen other_other = ( Q6_5_1A	== 1 | ///
 					Q6_5_11A== 1 )
 					
 egen other_sources = rowmax(other_progs other_assistance other_pension other_rentals other_interests)
+label variable other_sources "Other sources of income (modules 5 and 6)"
+
 					
 * number of income sources
 

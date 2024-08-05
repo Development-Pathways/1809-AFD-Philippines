@@ -10,7 +10,7 @@ use "Processed/FSP Baseline Processed.dta", clear
 
 * food security (module 7)
 
-rename Q7_1_A hunger // past 3 months
+recode Q7_1_A (1=1 "Yes") (2=0 "No"), gen(hunger) // past 3 months
 rename Q7_1_B hunger_freq // frequency in past 3 months
 * Q7_2A* = food security (module 7)
 
