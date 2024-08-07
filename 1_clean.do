@@ -8,6 +8,11 @@ cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Eval
 
 use "Processed/FSP Baseline Merged.dta", clear
 
+* ID
+
+rename INTNO hhid
+rename HH_ROSTER pid
+
 * location
 
 gen tondo = (MUN==138060)
@@ -74,6 +79,9 @@ egen hh_totedu = sum(edu) if edu!=98, by(hhid)
 
 * other household characteristics
 	* number of children
+	
+	gen 
+	
 	* skipped generation
 	* single parent 
 

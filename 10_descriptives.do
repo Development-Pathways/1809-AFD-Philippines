@@ -115,6 +115,13 @@ iebaltab $general $income $assets , grpvar(tondo) /*vce(cluster location) balmis
 reg tondo $general $income $assets , robust
 outreg2 using "Tondo_Other_reg.xlsx.xls", replace
 
+************************
+* Histograms (numerical)
+************************
+
+hist HHI_income HHI_livelihood
+
+
 /*
 
 **********************************

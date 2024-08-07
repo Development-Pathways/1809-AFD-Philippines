@@ -9,10 +9,6 @@ set maxvar 32767
 * change directory
 cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Evaluation (Assignment 1)/Data"
 
-*	import delimited "FSP Baseline/FSP BASELINE 2023 CAPI_2024_01_08_15_30.csv", clear
-
-*	keep INTNO q13_1_a1-q13_2_c5
-
 * individual level data
 use "FSP Baseline/FSP Baseline 2023 Section 2. Household members information and Employment.dta", clear // ID 38,687
 merge 1:1 ID using "FSP Baseline/FSP Baseline 2023 Section 12. Child Health.dta", nogen // ID 3,188
@@ -25,6 +21,8 @@ merge m:1 INTNO using "FSP Baseline/FSP Baseline 2023 Main Questionnaire Dataset
 
 * variables provided by ADB : km_to_fixed_vendor treatment final_cluster cluster_size
 merge m:1 INTNO using "FSP Baseline/AFD_request_Aug1.dta" // 335 households not matched 
+rename _merge ADB 
+label variable ADB "Merge with ADB file (treatment indicator)"
 
 order INTNO PROVINCE MUN BRGY CLUSTER final_cluster cluster_size treatment, first
 
@@ -32,7 +30,22 @@ order INTNO PROVINCE MUN BRGY CLUSTER final_cluster cluster_size treatment, firs
 //estpost sum _all
 //esttab using "FSP Baseline/descr.csv", cells("count mean sd min max") replace
 
-rename INTNO hhid
-rename HH_ROSTER pid
+save "Processed/FSP Baseline Merged.dta", replace
+
+*	productive assets module from raw data
+	
+	import delimited "FSP Baseline/FSP BASELINE 2023 CAPI_2024_01_08_15_30.csv", clear
+
+	keep sbjnum q13_1_a1-q13_2_c5
+	
+	merge 1:1 sbjnum using "FSP Baseline/AFD_request_Aug6.dta", keep(3) nogen
+	
+	merge 1:m INTNO using "Processed/FSP Baseline Merged.dta"
+	
+	recode _merge (2=0 "Not matched with raw data") (3=1 "Matched with raw data"), gen(raw_data_match) // 7 households (57 individuals)
+	drop _merge
+
+order q13_1_a1-q13_2_c5, before(Q13_3A1)	
 
 save "Processed/FSP Baseline Merged.dta", replace
+
