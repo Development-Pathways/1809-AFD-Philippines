@@ -71,30 +71,26 @@ count if has_pregnant == 1
 
 *Combination of child and pregnant mother
 
-egen has_preg_or_child = rowmax(has_pregnant )
+egen has_preg_or_child = rowmax(has_pregnant has_child05)
 
 gen health_access = (pregnant_health==1 | hh_treat_child==1)
-replace health_access = . if has_pregnant
+replace health_access = . if has_preg_or_child==0
 
 *Access to child care
 
-
+recode Q5_11C (2=0 "No") (1=1 "Yes") (8/9=.), gen(day_care)
 
 *Access to information (Dummy if has phone, radio, tv)
-gen access_info = 0
-replace access_info = 1 if Q13_3A2!= 0 | Q13_3A3 != 0 | Q13_3A4 != 0
+gen access_info = (Q13_3A2!= 0 | Q13_3A3 != 0 | Q13_3A4 != 0)
 label variable access_info "Access to info (radio, tv, phone)"
-label define access_info_lbl 0 "No" 1 "Yes"
-label values access_info access_info_lbl
-
 
 *Number of school aged children attending school, school age  5-17
-gen attend_school = (age >= 5 & age <= 17) &  (edu!=2)
+gen attend_school = (age>=5 & age<=17) & (edu!=0 & edu!=.) // highest grade higher than preschool
+egen hh_n_school = sum(attend_school), by(hhid)
+egen hh_school = max(attend_school), by(hhid)
 
 *Proportion of school aged children attending school, school age  5-17
-gen school_age = (age >= 5 & age <= 17)
-egen total_school_age = total(school_age)
-egen total_attend_school = total(attend_school)
-gen prop_attend_school = total_attend_school / total_school_age
+egen n_school_age = sum(age>=5 & age<=17), by(hhid)
+gen prop_attend_school = hh_n_school / n_school_age
 
 save "Processed/FSP Baseline Processed.dta", replace

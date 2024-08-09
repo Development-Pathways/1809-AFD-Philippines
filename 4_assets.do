@@ -16,6 +16,7 @@ rename Q13_3C12V tot_asset_value
 
 gen agri_land = (q13_1_a1==1) if !missing(q13_1_a1)
 gen agri_land_sqm = q13_1_b1 if (q13_1_b1!=999998|q13_1_b1!=999999)
+gen agri_land_pc = agri_land_sqm/hhsize
 
 gen resid_land = (q13_1_a2==1) if !missing(q13_1_a2)
 gen resid_land_sqm = q13_1_b2 if (q13_1_b2!=999998|q13_1_b2!=999999)
@@ -25,7 +26,8 @@ gen resid_land_sqm = q13_1_b2 if (q13_1_b2!=999998|q13_1_b2!=999999)
 forvalues i = 1/5 {
 	
 	replace q13_2_a`i' = . if (q13_2_a`i'== 8 | q13_2_a`i'== 98 | q13_2_a`i'== 99)
-
+	replace q13_2_c`i' = . if q13_2_c`i'== 999998 | q13_2_c`i'== 999999
+	
 	*average price for each asset (hh level)
 	gen price_f`i' = q13_2_c`i' / q13_2_a`i' // price/number
 	
@@ -53,7 +55,7 @@ forvalues i = 1/5 {
 rename Q13_3A1 n_shops_owned // rename to exclude shop/commercial structure from asset index
 
 	* average price of shop/commercial structure
-	gen price_shop = Q13_3D1 / n_shops_owned // use sqm as value measure
+	gen price_shop = Q13_3D1 / n_shops_owned 
 	egen avg_price_shop = mean(price_shop), by(MUN)
 
 * other assets

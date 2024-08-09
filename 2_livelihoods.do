@@ -57,6 +57,11 @@ egen hh_income = rowtotal(HHTIncome CROPTOT1 LIVESTOCKTOT1 FISHINGTOT1 FOODSERVI
 gen s_hh_vuln_income = hh_vuln_income/hh_income
 gen s_hh_vuln_livelihood = hh_vuln_income/hh_livelihood
 
+
+foreach var of varlist HHTIncome ENTREPRENEURIALTOT1 INCOMEALLSOURCES1 hh_livelihood hh_income {
+	gen `var'_pc = `var'/hhsize
+}
+
 	* income diversity 
 
 * diversity index = share of income from activities

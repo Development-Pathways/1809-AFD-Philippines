@@ -12,6 +12,8 @@ use "Processed/FSP Baseline Processed.dta", clear
 * savings and banking (module 14) 
 rename Q_575 tot_savings
 
+gen savings_pc = tot_savings/hhsize
+
 * borrowing (module 15)
 rename Q15_1_CT tot_borrow
 

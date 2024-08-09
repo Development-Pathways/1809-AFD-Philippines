@@ -20,11 +20,11 @@ merge 1:1 ID using "FSP Baseline/FSP Baseline 2023 Section 17. Children Born in 
 merge m:1 INTNO using "FSP Baseline/FSP Baseline 2023 Main Questionnaire Dataset.dta", nogen // INTNO 5,655
 
 * variables provided by ADB : km_to_fixed_vendor treatment final_cluster cluster_size
-merge m:1 INTNO using "FSP Baseline/AFD_request_Aug1.dta" // 335 households not matched 
+merge m:1 INTNO using "FSP Baseline/AFD_request_Aug8.dta" // 335 households not matched 
 rename _merge ADB 
 label variable ADB "Merge with ADB file (treatment indicator)"
 
-order INTNO PROVINCE MUN BRGY CLUSTER final_cluster cluster_size treatment, first
+order INTNO PROVINCE MUN BRGY CLUSTER final_cluster pair_rank cluster_size treatment, first
 
 * export summary
 //estpost sum _all
@@ -48,4 +48,3 @@ save "Processed/FSP Baseline Merged.dta", replace
 order q13_1_a1-q13_2_c5, before(Q13_3A1)	
 
 save "Processed/FSP Baseline Merged.dta", replace
-

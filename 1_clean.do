@@ -25,15 +25,93 @@ egen provmun = group(PROVINCE MUN), label
 * individual
 
 recode Q2D (1=0 "Male") (2=1 "Female"), gen(sex)
-rename Q2E age
+gen age = Q2E if Q2E!=998
 recode age	(0/9=0 "0-9") (10/19=1 "10-19") (20/29=2 "20-29") (30/39=3 "30-39") ///
 			(40/49=4 "40-49") (50/59=5 "50-59") (60/69=6 "60-69") ///
 			(70/79=7 "70-79") (80/max=8 "80+"), gen(age10yrs)
-recode Q2H (0/1 = 0 "No grade completed") (2/6 = 1 "Incomplete Primary") (7 = 3 "Primary") (8/10 = 4 "Incomplete Junior High") (11 = 5 "Junior High") (12 = 6 "1st year Senior High") (13 = 7 "Senior High") (14/17 = 8 "Tertiary") (18/max =.) , gen(edu)
 rename Q2G rel 
 recode Q2I (5/max = .), gen(marital)
 recode Q2J (12=1 "Tagalog") (4=2 "Ilocano") (1=3 "Bicolano") (6=4 "Cebuano") (2 3 5 7/11 13/15 88 = 5 "Other") (89/max = .), gen(ethnicity)
 
+
+* education
+recode Q2H (0/1 = 0 "No grade completed") (2/6 = 1 "Incomplete Primary") (7 = 3 "Primary") (8/10 = 4 "Incomplete Junior High") (11 = 5 "Junior High") (12 = 6 "1st year Senior High") (13 = 7 "Senior High") (14/17 = 8 "Tertiary") (18/max =.) , gen(edu)
+
+* household
+
+rename NO_MEM hhsize
+
+	* check 1 hh head
+	bysort hhid:egen head_count=sum(rel==1)
+	drop head_count
+
+recode hhsize (1=1 "1 Person") (2=2 "2 Persons") (3/5=3 "3-5 Persons")   (6/7=4 "6-7 Persons") (8/10=5 "8-10 Persons") (11/max =6 "More than 10 persons") , gen(hhsize_bin)	
+	
+/* household head - add labels or recode
+foreach x in sex age edu marital ethnicity work {
+    by hhid, sort: egen head_`x' = max(cond(rel == 1, `x', .))
+}
+*/
+
+* max education level in household
+egen hh_maxedu = max(Q2H) if Q2H<98, by(hhid)
+label values hh_maxedu edu 
+
+* total yrs of education in household
+egen hh_totedu = sum(edu) if edu!=98, by(hhid)
+
+* education potential 
+
+gen edu_pot = age-4 // potential max n. yrs of education
+replace edu_pot = 0 if edu_pot<0
+replace edu_pot = 17 if edu_pot>17
+egen hh_edu_pot = sum(edu_pot), by(hhid)
+
+gen hh_edupotratio = hh_maxedu/hh_edu_pot 
+replace hh_edupotratio = 0 if hh_edu_pot==0
+replace hh_edupotratio = 1 if hh_edupotratio>1
+
+* other household characteristics
+	
+	* number of children
+	egen n_child05 = sum(age<5), by(hhid) // excluding 5yo
+	gen has_child05 = n_child05>0 
+	
+	egen n_child017 = sum(age<18), by(hhid)
+	gen has_child017 = n_child017>0 
+
+	gen n_adults = hhsize - n_child017
+	
+	* household composition
+	egen hh_couple = max(rel==2), by(hhid)
+	egen hh_son = max(rel==3), by(hhid)
+	egen hh_grandson = max(rel==6), by(hhid)
+
+	* skipped generation
+	gen hh_skipgen = (hh_grandson==1 & hh_son==0) // there is head's grandchild but not child
+	
+	* single parent
+	gen hh_singlepar = (hh_son==1 & hh_couple==0) // there is head's child but not spouse
+	
+gen hhtype = 8
+replace hhtype = 2 if hh_couple==1 & n_child017==0 
+replace hhtype = 1 if hh_couple==1 & n_child017>0 
+replace hhtype = 3 if n_adults==1 & n_child017>0
+replace hhtype = 4 if hhsize==1 & n_adults==1 & n_child017==0 & age>=60
+replace hhtype = 5 if hhsize==1 & n_adults==1 & n_child017==0 & age>=18 & age<60
+replace hhtype = 6 if hh_son==1 & hh_grandson==1
+replace hhtype = 7 if hh_grandson==1 & hh_son==0
+ 
+label define hhtypeg 1 "Couple household, with children"    ///
+					2 "Couple household, with no children"   ///
+                    3 "Single parent/caregiver (<60 years)"  ///
+                    4 "One-person household, 60+ years"      ///
+                    5 "One-person household, 18-59 years"    ///
+                    6 "Three generation household"            ///
+                    7 "Skipped generation"                    ///
+                    8 "Other household types"
+label values hhtype hhtypeg
+	
 * employment
 
 recode Q3A (1=1 "Yes") (2=0 "No"), gen(work) // any work past 6 months (age 12+)
@@ -53,42 +131,6 @@ gen paid_work = (work_type==1 | work_type_2==1 | work_type==2 | work_type_2==2) 
 gen wage_work = (work_type==1 | work_type_2==1) if !missing(work) // either primary or secondary activity
 
 gen agri_work = (sector==1) if !missing(work) // primary activity
-
-* household
-
-rename NO_MEM hhsize
-
-	* check 1 hh head
-	bysort hhid:egen head_count=sum(rel==1)
-	drop head_count
-
-recode hhsize (1=1 "1 Person") (2=2 "2 Persons") (3/5=3 "3-5 Persons")   (6/7=4 "6-7 Persons") (8/10=5 "8-10 Persons") (11/max =6 "More than 10 persons") , gen(hhsize_bin)	
-	
-/* household head - add labels or recode
-foreach x in sex age edu marital ethnicity work {
-    by hhid, sort: egen head_`x' = max(cond(rel == 1, `x', .))
-}
-*/
-
-* max education level in household
-egen hh_maxedu = max(edu) if !missing(edu), by(hhid)
-label values hh_maxedu edu 
-
-* total yrs of education in household
-egen hh_totedu = sum(edu) if edu!=98, by(hhid)
-
-* other household characteristics
-	* number of children
-	
-	gen 
-	
-	* skipped generation
-	* single parent 
-
-* share of school-age children in education // VALIDATE
-egen hh_schooling = sum(age>=12 & age<18 & nowork_reason==8), by(hhid)	
-egen hh_12to17 = sum(age>=12 & age<18), by(hhid)	
-gen hh_eduratio = hh_schooling/hh_12to17
 
 *fit-to-work working age adults
 gen fitadult = (age>=15 & age<65 & nowork_reason!=6) 	
@@ -151,25 +193,28 @@ gen hh_emprate = hh_fitwork/hh_fitadults
 gen unfit_work = (fitadult==0 & work==1)
 egen hh_unfit_work = max(fitadult==0 & work==1), by(hhid)
 
+* share of school-age children in education // VALIDATE
+egen hh_schooling = sum(age>=12 & age<18 & nowork_reason==8), by(hhid)	
+egen hh_12to17 = sum(age>=12 & age<18), by(hhid)	
+gen hh_eduratio = hh_schooling/hh_12to17
+
 * child labour 
 
 gen child_lab = (age<15 & work==1) if age<18
 egen hh_child_lab = max(child_lab), by(hhid)
 egen hh_n_child_lab = sum(child_lab), by(hhid)
 
-gen child_lab_hrs = 0 if age<18
+gen child_lab_hrs = 0 if age<18 // missing work hrs (69) automatically assumed as too many (overestimate)
 replace child_lab_hrs = 1 if (age>=5 & age<=11) & (paid_work==1) // children 5-11 in paid work for at least 1 hr (n/a)
 replace child_lab_hrs = 1 if (age>=12 & age<=14) & (paid_work==1 & work_hrs>14) // children 12-14 in paid work for at least 14 hrs - wrk hrs refer to any job (they may do <14 hrs paid plus hrs of unpaid work)
-replace child_lab_hrs = 1 if (age>=5 & age<=14) & (paid_work==0 & work_hrs>21) // children 5-11 and 12-14 in unpaid work for at least 21 hrs
-replace child_lab_hrs = 1 if (age>=15 & age<=17) & (paid_work==1 & work_hrs>43) // children 15-17 in paid work for at least 43 hrs - wrk hrs refer to any job (they may do <43 hrs paid plus hrs of unpaid work)
+replace child_lab_hrs = 1 if (age>=5 & age<=14) & (paid_work==0 & work_hrs>21 & !missing(work_hrs)) // children 5-11 and 12-14 in unpaid work for at least 21 hrs
+replace child_lab_hrs = 1 if (age>=15 & age<=17) & (paid_work==1 & work_hrs>43 & !missing(work_hrs)) // children 15-17 in paid work for at least 43 hrs - wrk hrs refer to any job (they may do <43 hrs paid plus hrs of unpaid work)
 
-* assert child_lab==child_lab_hrs
+tab1 child_lab child_lab_hrs // less child labour using hrs worked --> will use simple definition
 
 * vulnerable labour
 
 gen vuln_lab = (child_lab==1) | (age>=65 & paid_work==1)
-egen hh_n_vul_lab = sum(vuln_lab), by(hhid)
-
-
+egen hh_vul_lab = max(vuln_lab), by(hhid)
 
 save "Processed/FSP Baseline Processed.dta", replace
