@@ -8,6 +8,13 @@ cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Eval
 
 use "Processed/FSP Baseline Merged.dta", clear
 
+* recode missing values
+
+ds, has(type numeric)  
+foreach var of varlist `r(varlist)' {
+	replace `var' = . if `var'==999998 | `var'==999999
+}
+
 * ID
 
 rename INTNO hhid

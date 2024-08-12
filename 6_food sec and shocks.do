@@ -77,6 +77,7 @@ forval j = 1/28 {								// shocks
 
 egen n_strategies = rowtotal(strategy*)
 
+* negative strategies: Sold land, sold productive asset, ate less food to reduce expenses, ate lower quality food to reduce expenses, took children out of school, sent household member away permanently, sent children to be fostered by relatives, sent children into domestic service, sent children to work somewhere other than domestic service
 egen negative_strat = rowmax(strategy2 strategy4 strategy9 strategy10 strategy11 strategy14 strategy15 strategy16 strategy17) if any_shock==1
 egen n_neg_strat = rowtotal(n_strat2 n_strat4 n_strat9 n_strat10 n_strat11 n_strat1 n_strat15 n_strat16 n_strat17) if any_shock==1
 

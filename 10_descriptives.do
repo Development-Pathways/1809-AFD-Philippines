@@ -9,6 +9,9 @@ use "$data_folder/Processed/FSP Baseline Processed.dta", clear
 
 cd "$data_folder/Tables"
 
+
+drop if missing(treatment)
+
 * IND LEVEL
 
 global ind_vars age10yrs ethnicity marital edu work nowork_reason work_type* sector* agri_work wage_work unfit_work bop*
@@ -26,54 +29,65 @@ foreach var of varlist $ind_vars {
 keep if rel==1
 
 **********************
-* Modules' shortcuts *
+* Modules' shortcuts * 
 **********************
 
-global general cluster_size hhsize_bin sex marital ethnicity km_to_fixed_vendor
+global general hhid pid PROVINCE MUN BRGY treatment pair_rank final_cluster cluster_size km_to_fixed_vendor hhsize sex age rel marital ethnicity  n_child* has_child* hh_skipgen hh_singlepar hhtype hh_fitadults hh_depratio 
 
-global human_capital edu hh_maxedu hh_totedu hh_eduratio work_type hh_fitadults hh_depratio hh_fitwork  hh_emprate hh_unfit_work hh_child_lab hh_n_child_lab hh_n_vul_lab
+global edu edu hh_maxedu hh_totedu hh_edupotratio hh_eduratio
 
-global income HHTIncome crop CROPTOT1 livestock LIVESTOCKTOT1 fishing FISHINGTOT1 foodservice FOODSERVICETOT1 wholesale WHOLESALETOT1 manufacturing MANUFACTURINGTOT1 trasportation TRANSPORTATIONTOT1 OTHERTOT1 other_* OTHERPROG1 INCOMERECEIPTS1 n_sources_alt INCOMEALLSOURCES1 hh_farm_income hh_vuln_income hh_livelihood hh_income n_sources s_hh_vuln_income s_hh_vuln_livelihood HHI_income HHI_livelihood hh_n_jobs 
+global work work nowork_reason work_hrs work_type* sector* paid_work wage_work agri_work hh_fitwork hh_emprate hh_unfit_work hh_child_lab hh_n_child_lab hh_vul_lab bop* HHMPINCOME HHMSINCOME HHMOIncome hh_n_jobs
 
-* global consumption fsec_score fooddivindex pcfoodcons ...
+global income HHTIncome* crop CROPTOT1 livestock LIVESTOCKTOT1 fishing FISHINGTOT1 foodservice FOODSERVICETOT1 wholesale WHOLESALETOT1 manufacturing MANUFACTURINGTOT1 trasportation TRANSPORTATIONTOT1 ENTREPRENEURIALTOT1* OTHERTOT1 other_* OTHERPROG1 Q6_*_T INCOMERECEIPTS1 n_sources_alt INCOMEALLSOURCES1* hh_farm_income hh_vuln_income hh_livelihood* hh_income n_sources n_sources_alt s_hh_vuln_income s_hh_vuln_livelihood s1A_* HHI_income s1B_* HHI_livelihood  
 
-* global assets tot_asset_value assetindex n_assets liquid_assetindex ...
+global consumption TOTALBREADANDCEREALS TOTALMEAT TOTALFISHANDSEAFOOD TOTALMILKDAIRYANDEGGS TOTALOILDANDFATS TOTALFRUITSANDNUTS TOTALVEGETABLES TOTALSUGARPROD TOTALFOODNEC TOTALNONALCOHOL TOTALCOOKED food_consumption* Q9_2_* nonfood_consumption neces_consumption total_consumption* share_food share_necess 
 
-global debt tot_savings tot_borrow any_debt good_source bad_source good_reason bad_reason good_debt bad_debt 
+global assets tot_asset_value agri_land* resid_land* n_shops_owned price_shop price_* weighted_a* has_asset_* n_f_assets n_assets n_asset_types asset_index*
 
-global shocks hunger hunger_freq FIES_8 FIES_24 shop_diversity n_shocks any_shock n_disaster any_disaster n_climshock any_climshock n_strategies negative_strat n_neg_strat // ... 
+global debt tot_savings savings_pc tot_borrow any_debt good_source bad_source good_reason bad_reason good_debt bad_debt 
 
-global socpro hh_safetynet hh_safetynet2 hh_inclusion n_programs hh_socinsur 
+global shocks hunger hunger_freq FIES_8 FIES_24 shop_diversity n_shocks any_shock n_disaster any_disaster n_climshock any_climshock n_strategies negative_strat n_neg_strat negative_strat_climate 
 
-global services hh_treat_child hh_ill_child //...
+global socpro Q5_*A Q5_*B Q5_*C Q6_2_1* hh_safetynet hh_safetynet2 hh_inclusion n_programs hh_socinsur 
 
-* global resilience ...
+global services hh_treat_child hh_ill_child has_pregnant has_preg_or_child health_access day_care access_info hh_school prop_attend_school 
 
-* keep hhid pid MUN MUN tondo $general $human_capital $income $consumption $assets $debt $shocks $socpro $services $resilience
+global resilience /*abs_index*/ 
+
+global all $general $edu $work $income $consumption $assets $debt $shocks $socpro $services $resilience
+
+* keep $general $edu $work $income $consumption $assets $debt $shocks $socpro $services $resilience
+
+missings report $all
+
+****************************
+* summary of all variables * 
+****************************
+
+eststo clear
+eststo: quietly estpost sum $all 
+* esttab using "summary.csv", cells("count mean sd min max") replace
+bysort MUN: eststo: quietly estpost summarize $all 
+esttab using "summary_by_mun.csv", cells("count mean sd min max") replace
+import delimited summary_by_mun.csv, clear
+foreach var of varlist * {
+    replace `var'= ustrregexra(`var', `"[="]"', "")
+}
+export excel using "summary_by_mun", sheet("summary_by_mun") sheetreplace
 
 ******************
 * Type shortcuts *
 ******************
 
-global dummy crop livestock fishing foodservice wholesale manufacturing trasportation other_* hunger hh_unfit_work hh_child_lab *_debt *_source *d_reason any_shock any_disaster any_climshock negative_strat hh_safetynet* hh_inclusion hh_socinsur hh_treat_child hh_ill_child /* consumption assets */   
+use "$data_folder/Processed/FSP Baseline Processed.dta", clear
 
-global numeric cluster_size hhsize km_to_fixed_vendor hh_totedu hh_fitadults hh_depratio hh_fitwork hh_n_child_lab hh_n_vul_lab HHTIncome CROPTOT1 LIVESTOCKTOT1 FISHINGTOT1 FOODSERVICETOT1 WHOLESALETOT1 MANUFACTURINGTOT1 TRANSPORTATIONTOT1 OTHERTOT1 ENTREPRENEURIALTOT1 OTHERPROG1 INCOMERECEIPTS1 INCOMEALLSOURCES1 hh_farm_income hh_vuln_income hh_livelihood hh_income n_sources hh_n_jobs /* consumption assets */ tot_savings tot_borrow FIES_8 FIES_24 shop_diversity n_shocks n_disaster n_climshock n_strategies n_neg_strat n_programs 
+* global dummy crop livestock fishing foodservice wholesale manufacturing trasportation other_* hunger hh_unfit_work hh_child_lab *_debt *_source *d_reason Q16_*A any_shock any_disaster any_climshock negative_strat hh_safetynet* hh_inclusion hh_socinsur hh_treat_child hh_ill_child 
 
-global share hh_eduratio hh_emprate s_hh_vuln_income s_hh_vuln_livelihood HHI_income HHI_livelihood /* consumption assets */
+* global numeric cluster_size hhsize km_to_fixed_vendor hh_totedu hh_fitadults hh_depratio hh_fitwork hh_n_child_lab hh_n_vul_lab HHTIncome* CROPTOT1 LIVESTOCKTOT1 FISHINGTOT1 FOODSERVICETOT1 WHOLESALETOT1 MANUFACTURINGTOT1 TRANSPORTATIONTOT1 OTHERTOT1 ENTREPRENEURIALTOT1* OTHERPROG1 INCOMERECEIPTS1 INCOMEALLSOURCES1* hh_farm_income hh_vuln_income hh_livelihood* hh_income* n_sources hh_n_jobs food_consumption* total_consumption* tot_savings savings_pc tot_borrow FIES_8 FIES_24 shop_diversity n_shocks n_disaster n_climshock n_strategies n_neg_strat n_programs 
 
-global categorical hhsize_bin sex marital ethnicity edu hh_maxedu work_type hunger_freq FIES_8 shop_diversity n_shocks n_disaster n_climshock n_strategies 
+* global share hh_eduratio hh_edupotratio hh_emprate s_hh_vuln_income s_hh_vuln_livelihood HHI_income HHI_livelihood 
 
-************************
-* Freq & share (dummies)
-************************
-
-foreach var of varlist $dummy {
-	table MUN, statistic(total `var') statistic(frequency) statistic(mean `var') statistic(sd `var')
-	collect export "Baseline stats.xlsx", as(xlsx) sheet("`var'", replace) cell(B5) modify
-	putexcel set "Baseline stats.xlsx", sheet("`var'") modify
-	putexcel B2 = "Frequency and share of `var' by location",  font("calibri" , 14)
-	putexcel B3 = "Source: Walang Gutom RCT Baseline ($S_DATE)",  font("calibri" , 9)
-}
+global categorical hhsize_bin hhtype age10yrs sex marital ethnicity edu nowork_reason work_type* sector* bop* n_sources n_shops_owned n_f_assets n_assets n_asset_types hunger_freq FIES_8 n_shocks n_disaster n_climshock n_strategies n_programs 
 
 ********************************************
 * Distribution (level variables) by location
@@ -88,6 +102,19 @@ foreach var of varlist $categorical {
 	collect style cell result[column2], nformat (%3.0f)
 	collect label levels result column1 "Freq"
 	collect label levels result column2 "%"
+	collect export "Baseline stats.xlsx", as(xlsx) sheet("`var'", replace) cell(B5) modify
+	putexcel set "Baseline stats.xlsx", sheet("`var'") modify
+	putexcel B2 = "Frequency and share of `var' by location",  font("calibri" , 14)
+	putexcel B3 = "Source: Walang Gutom RCT Baseline ($S_DATE)",  font("calibri" , 9)
+}
+
+/*
+************************
+* Freq & share (dummies)
+************************
+
+foreach var of varlist $dummy {
+	table MUN, statistic(total `var') statistic(frequency) statistic(mean `var') statistic(sd `var')
 	collect export "Baseline stats.xlsx", as(xlsx) sheet("`var'", replace) cell(B5) modify
 	putexcel set "Baseline stats.xlsx", sheet("`var'") modify
 	putexcel B2 = "Frequency and share of `var' by location",  font("calibri" , 14)
@@ -110,16 +137,46 @@ foreach var of varlist $numeric $share {
 * Tondo vs other areas *
 ************************
 
-iebaltab $general $income $assets , grpvar(tondo) /*vce(cluster location) balmiss(groupmean)*/ total replace save("Tondo_Other.xlsx")
+iebaltab $general $income $assets , grpvar(tondo) /*vce(cluster final_cluster) balmiss(groupmean)*/ total replace save("Tondo_Other.xlsx")
 		
 reg tondo $general $income $assets , robust
 outreg2 using "Tondo_Other_reg.xlsx.xls", replace
+
+*/
 
 ************************
 * Histograms (numerical)
 ************************
 
 hist HHI_income HHI_livelihood
+
+*************
+* Correlation
+*************
+
+asdoc pwcorr $general $income $assets , bonferroni star(all) save(correlation.doc)
+
+**********************************
+* Treatment vs Control (balance) *
+**********************************
+
+* Absorptive resilence
+iebaltab $absorptive abs_index , grpvar(treatment) vce(cluster final_cluster) /*balmiss(groupmean)*/ total replace save("abs_balance.xlsx")
+
+
+*******************
+* other questions *
+*******************
+
+* are shops urban assets?
+mean Q13_3D1, over(MUN) // 106 obs
+mean n_shops_owned, over(MUN)
+
+* how many people experienced shocks?
+mean any_shock any_disaster any_climshock, over(MUN)
+
+* variation in asset prices within item and location
+
 
 
 /*
