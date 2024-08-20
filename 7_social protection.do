@@ -26,24 +26,35 @@ use "Processed/FSP Baseline Processed.dta", clear
 	* Other cash transfer
 	* Scholarship
 	* Social Pension
+
+* single programme dummies
+forval i = 1/9 {
+	gen prog_`i' = (Q5_`i'A==1)	
+}
+forval i = 10/16 {
+	gen prog_`i' = (Q5_`i'C==1)	
+}
+gen prog_17 = (Q5_20C_OTH==1)
+
+gen pension = (Q6_2_1A==1)
+
+* multiple programme dummies
 	
 gen hh_safetynet = (Q5_7A==1 | Q5_8A==1 | Q5_9A==1 | Q5_10C==1 | Q5_13C==1)	
 
 gen hh_safetynet2 = (Q5_7A==1 | Q5_8A==1 | Q5_9A==1 | Q5_10C==1 | Q5_13C==1 | Q5_12C==1)	
 
-* economic inclusion programmes
+gen hh_safetynet_no4p = (Q5_7A==1 | Q5_9A==1 | Q5_10C==1 | Q5_13C==1)	
 
 gen hh_inclusion = (Q5_14C==1 | Q5_15C==1 | Q5_16C==1)
 
-* number of schemes (0-11)
-foreach var of varlist Q5_7A Q5_8A Q5_9A Q5_10C Q5_11C Q5_12C Q5_13C Q5_14C Q5_15C Q5_16C Q5_20C_OTH {
-	gen d`var' = (`var'==1)
-}
-egen n_programs = rowtotal(dQ5_*)
-
-* access to social insurance
-
 gen hh_socinsur = (Q5_1A==1 | Q5_2A==1 | Q5_3A==1 | Q5_4A==1 | Q5_5A==1| Q5_6A==1)
+
+gen hh_SLP = (Q5_16C==1)
+
+* number of schemes (0-11)
+
+egen n_programs = rowtotal(prog_7-prog_17)
 
 * individual beneficiaries
 
@@ -75,9 +86,9 @@ foreach j in 10 11 12 13 14 15 16 20 {
 
 */
 
-foreach var of varlist hh_safetynet hh_safetynet2 hh_inclusion n_programs hh_socinsur {
-	tab MUN `var', row nofreq
-	reg `var' ib3.provmun, robust
+foreach var of varlist prog_* pension hh_safetynet* hh_inclusion hh_socinsur n_programs  {
+	tab MUN `var' if rel==1, row nofreq
+*	reg `var' ib3.provmun if rel==1, robust
 }
 
 save "Processed/FSP Baseline Processed.dta", replace

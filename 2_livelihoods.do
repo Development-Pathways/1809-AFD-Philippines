@@ -17,6 +17,11 @@ label define bop 0 "Vulnerable" 1 "Non-vulnerable"
 label values bop bop
 label variable bop "Basis of payment"
 
+egen hh_bop = max(bop), by(hhid) // vulnerable if no non-vulnerable incomes in hh 
+label values hh_bop bop
+
+gen hh_vul_work = 1 - hh_bop 
+
 * income from work
 /*
 HHMPINCOME = income from primary occupation (IND) <-- wage 
@@ -41,6 +46,9 @@ INCOMERECEIPTS1 = income from other receipts (module 6) - 12 months
 INCOMEALLSOURCES1 = total household income - 12 months 
 */
 
+// 1 hh for which missing INCOMEALLSOURCES1 but not missing income components 
+replace INCOMEALLSOURCES1 = HHTIncome if missing(INCOMEALLSOURCES1) & (HHTIncome!=. | CROPTOT1!=. | LIVESTOCKTOT1!=. | FISHINGTOT1!=. | FOODSERVICETOT1!=. | WHOLESALETOT1!=. | MANUFACTURINGTOT1!=. | TRANSPORTATIONTOT1!=. | OTHERTOT1!=. | OTHERPROG1!=. | INCOMERECEIPTS1!=.)
+
 	egen CHECK = rowtotal(HHTIncome CROPTOT1 LIVESTOCKTOT1 FISHINGTOT1 FOODSERVICETOT1 WHOLESALETOT1 MANUFACTURINGTOT1 TRANSPORTATIONTOT1 OTHERTOT1 OTHERPROG1 INCOMERECEIPTS1) if !missing(INCOMEALLSOURCES1)
 	assert CHECK==INCOMEALLSOURCES1
 
@@ -57,17 +65,18 @@ egen hh_income = rowtotal(HHTIncome CROPTOT1 LIVESTOCKTOT1 FISHINGTOT1 FOODSERVI
 gen s_hh_vuln_income = hh_vuln_income/hh_income
 gen s_hh_vuln_livelihood = hh_vuln_income/hh_livelihood
 
-
 foreach var of varlist HHTIncome ENTREPRENEURIALTOT1 INCOMEALLSOURCES1 hh_livelihood hh_income {
 	gen `var'_pc = `var'/hhsize
 }
 
+* hh_livelihood_pc/INCOMEALLSOURCES1_pc ?
+
 	* income diversity 
 
-* diversity index = share of income from activities
+* income diversity index 
 
-foreach x of varlist HHTIncome CROPTOT1 LIVESTOCKTOT1 FISHINGTOT1 FOODSERVICETOT1 WHOLESALETOT1 MANUFACTURINGTOT1 TRANSPORTATIONTOT1 OTHERTOT1 OTHERPROG1 {
-	gen s1A_`x' = `x'/hh_income
+foreach x of varlist HHTIncome CROPTOT1 LIVESTOCKTOT1 FISHINGTOT1 FOODSERVICETOT1 WHOLESALETOT1 MANUFACTURINGTOT1 TRANSPORTATIONTOT1 OTHERTOT1 OTHERPROG1 INCOMERECEIPTS1 {
+	gen s1A_`x' = `x'/INCOMEALLSOURCES1
 	gen s2A_`x' = (s1A_`x')^2
 }
 
@@ -77,6 +86,10 @@ replace check_A=. if check_A==0
 assert check_A==1 if !missing(check_A)
 
 egen HHI_income = rowtotal(s2A_*) // calculated manually, surely there's a stata command
+
+replace HHI_income = . if HHTIncome==. & CROPTOT1==. & LIVESTOCKTOT1==. & FISHINGTOT1==. & FOODSERVICETOT1==. & WHOLESALETOT1==. & MANUFACTURINGTOT1==. & TRANSPORTATIONTOT1==. & OTHERTOT1==. & OTHERPROG1==. & INCOMERECEIPTS1==.
+
+* diversity index of income-generating actitivities 
 
 foreach x of varlist HHTIncome CROPTOT1 LIVESTOCKTOT1 FISHINGTOT1 FOODSERVICETOT1 WHOLESALETOT1 MANUFACTURINGTOT1 TRANSPORTATIONTOT1 OTHERTOT1 {
 	gen s1B_`x' = `x'/hh_livelihood
@@ -89,6 +102,11 @@ replace check_B=. if check_B==0
 assert check_B==1 if !missing(check_B)
 
 egen HHI_livelihood = rowtotal(s2B_*)
+
+* set to missing if missing info on all income sources
+replace HHI_livelihood = . if HHTIncome==. & CROPTOT1==. & LIVESTOCKTOT1==. & FISHINGTOT1==. & FOODSERVICETOT1==. & WHOLESALETOT1==. & MANUFACTURINGTOT1==. & TRANSPORTATIONTOT1==. & OTHERTOT1==. & OTHERPROG1==. & INCOMERECEIPTS1==.
+* set to 1 (no diversification) if income comes from programmes and receipts only
+replace HHI_livelihood = 1 if HHI_livelihood==0
 
 * hh activities
 
@@ -106,12 +124,19 @@ forval i = 1/8 {
 rename Q4_1_1A crop
 rename Q4_2_1A livestock
 rename Q4_3_1A fishing
+
+egen crop_lives_fish = rowtotal(crop livestock fishing)
+
 rename Q4_4_1A foodservice
 rename Q4_5_1A wholesale
 rename Q4_6_1A manufacturing
 rename Q4_7_1A trasportation
 rename Q4_8_1A other_activ
 drop Q4*
+
+gen farming_ind = (sector==1 | sector_2==1 | crop_lives_fish==1)
+egen hh_farming = max(farming_ind), by(hhid)
+
 
 * other income
 
@@ -169,6 +194,14 @@ label variable other_sources "Other sources of income (modules 5 and 6)"
 egen n_sources = rowtotal(hh_n_jobs crop livestock fishing foodservice wholesale manufacturing trasportation other_activ other_progs other_assistance other_pension other_rentals other_interests)		
 
 egen n_sources_alt = rowtotal(hh_n_jobs crop livestock fishing foodservice wholesale manufacturing trasportation other_activ other_sources)		
+
+* * 
+
+gen hh_vuln = (crop_lives_fish==1 | hh_bop==0) // vulnerable if engages in farming or has vulnerable income from work 
+
+** help from outside the household ** 
+
+gen network_help = (Q6_1_1A==1 | Q6_1_2A==1 | Q6_1_3A==1| Q15_6A==1 ) // received transfers from relative or friends or borrowed from friends and neighbours (no instances of received emergency cash tranfer from migrated hh memeber in response to shock)
 
 save "Processed/FSP Baseline Processed.dta", replace
 
