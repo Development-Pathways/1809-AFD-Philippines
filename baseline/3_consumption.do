@@ -58,4 +58,8 @@ foreach var of varlist food_consumption total_consumption {
 	gen `var'_pc = `var'/hhsize
 }
 
+clonevar exp_edu = Q9_2_1 
+
+gen exp_edu_pchild = exp_edu/n_school_age
+
 save "Processed/FSP Baseline Processed.dta", replace

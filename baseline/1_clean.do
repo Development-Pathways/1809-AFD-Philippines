@@ -78,6 +78,32 @@ gen hh_edupotratio = hh_maxedu/hh_edu_pot
 replace hh_edupotratio = 0 if hh_edu_pot==0
 replace hh_edupotratio = 1 if hh_edupotratio>1
 
+* age-appropriate education
+
+gen age_edu = (age==6 & Q2H>=1 & !missing(Q2H))
+replace age_edu = 1 if (age==7 & Q2H>=2 & !missing(Q2H))
+replace age_edu = 1 if (age==8 & Q2H>=3 & !missing(Q2H))
+replace age_edu = 1 if (age==9 & Q2H>=4 & !missing(Q2H))
+replace age_edu = 1 if (age==10 & Q2H>=5 & !missing(Q2H))
+replace age_edu = 1 if (age==11 & Q2H>=6 & !missing(Q2H))
+replace age_edu = 1 if (age==12 & Q2H>=7 & !missing(Q2H))
+replace age_edu = 1 if (age==13 & Q2H>=8 & !missing(Q2H))
+replace age_edu = 1 if (age==14 & Q2H>=9 & !missing(Q2H))
+replace age_edu = 1 if (age==15 & Q2H>=10 & !missing(Q2H))
+replace age_edu = 1 if (age==16 & Q2H>=11 & !missing(Q2H))
+replace age_edu = 1 if (age==17 & Q2H>=12 & !missing(Q2H))
+
+egen n_age_appr_edu = sum(age_edu), by(hhid) // --> see end of script
+
+*Number of school aged children attending school, school age  5-17
+gen attend_school = (age>=5 & age<=17) & (edu!=0 & edu!=.) // highest grade higher than preschool
+egen hh_n_school = sum(attend_school), by(hhid)
+egen hh_school = max(attend_school), by(hhid)
+
+*Proportion of school aged children attending school, school age  5-17
+egen n_school_age = sum(age>=5 & age<=17), by(hhid)
+gen prop_attend_school = hh_n_school / n_school_age
+
 * other household characteristics
 	
 	* number of children
@@ -223,5 +249,10 @@ tab1 child_lab child_lab_hrs // less child labour using hrs worked --> will use 
 
 gen vuln_lab = (child_lab==1) | (age>=65 & paid_work==1)
 egen hh_vul_lab = max(vuln_lab), by(hhid)
+
+// 
+
+gen age_appr_edu_ratio = n_age_appr_edu / n_child017 if n_child017>0
+
 
 save "Processed/FSP Baseline Processed.dta", replace

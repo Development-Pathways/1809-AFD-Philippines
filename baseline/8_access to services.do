@@ -84,13 +84,5 @@ recode Q5_11C (2=0 "No") (1=1 "Yes") (8/9=.), gen(day_care)
 gen access_info = (Q13_3A2!= 0 | Q13_3A3 != 0 | Q13_3A4 != 0)
 label variable access_info "Access to info (radio, tv, phone)"
 
-*Number of school aged children attending school, school age  5-17
-gen attend_school = (age>=5 & age<=17) & (edu!=0 & edu!=.) // highest grade higher than preschool
-egen hh_n_school = sum(attend_school), by(hhid)
-egen hh_school = max(attend_school), by(hhid)
-
-*Proportion of school aged children attending school, school age  5-17
-egen n_school_age = sum(age>=5 & age<=17), by(hhid)
-gen prop_attend_school = hh_n_school / n_school_age
 
 save "Processed/FSP Baseline Processed.dta", replace

@@ -10,9 +10,16 @@ cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Eval
 use "Processed/FSP Baseline Processed.dta", clear
 
 * savings and banking (module 14) 
-rename Q_575 tot_savings
 
+//amount
+rename Q_575 tot_savings
 gen savings_pc = tot_savings/hhsize
+
+//presence 
+
+recode Q14_*A (3/max = .) // don't know and refused as missing 
+
+gen has_savings = (Q14_1A==1 | Q14_2A==1 | Q14_3A==1 | Q14_4A==1) // missing = 0 
 
 * borrowing (module 15)
 rename Q15_1_CT tot_borrow

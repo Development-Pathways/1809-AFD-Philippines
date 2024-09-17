@@ -3,7 +3,7 @@
 // author: silvia
 // purpose: run scripts for the baseline analysis of Walang Gutom RCT 
 
-global github "~/Documents/GitHub/1809-AFD-Philippines"
+global github "~/Documents/GitHub/1809-AFD-Philippines/endline"
 
 do "$github/0_merge.do"
 do "$github/1_clean.do"

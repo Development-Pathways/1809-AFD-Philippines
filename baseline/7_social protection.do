@@ -20,6 +20,11 @@ use "Processed/FSP Baseline Processed.dta", clear
 * Q5_nB for programme n = 1/9
 * Q6_2_1B for pension
 
+foreach var of varlist Q5_*B {
+	su `var' if `var'>0
+}
+
+
 * access to safety nets 
 	* cash for work / food for work
 	* Pantawid Pamilya
@@ -34,6 +39,9 @@ forval i = 1/9 {
 forval i = 10/16 {
 	gen prog_`i' = (Q5_`i'C==1)	
 }
+
+label variable prog_8 "Pantawid Pamilya 4Ps"
+
 gen prog_17 = (Q5_20C_OTH==1)
 
 gen pension = (Q6_2_1A==1)
@@ -46,15 +54,21 @@ gen hh_safetynet2 = (Q5_7A==1 | Q5_8A==1 | Q5_9A==1 | Q5_10C==1 | Q5_13C==1 | Q5
 
 gen hh_safetynet_no4p = (Q5_7A==1 | Q5_9A==1 | Q5_10C==1 | Q5_13C==1)	
 
-gen hh_inclusion = (Q5_14C==1 | Q5_15C==1 | Q5_16C==1)
+gen hh_inclusion = (Q5_14C==1 | Q5_15C==1 | Q5_16C==1) // livelihood
 
-gen hh_socinsur = (Q5_1A==1 | Q5_2A==1 | Q5_3A==1 | Q5_4A==1 | Q5_5A==1| Q5_6A==1)
+*gen hh_socinsur = (Q5_1A==1 | Q5_2A==1 | Q5_3A==1 | Q5_4A==1 | Q5_5A==1| Q5_6A==1)
+
+gen hh_socinsur = (Q5_1A==1 | Q5_2A==1 | Q5_6A==1)
+
+gen hh_healthins = (Q5_3A==1 | Q5_4A==1 | Q5_5A==1)
 
 gen hh_SLP = (Q5_16C==1)
 
 * number of schemes (0-11)
 
-egen n_programs = rowtotal(prog_7-prog_17)
+egen n_safetynet = rowtotal(prog_7-prog_13 prog_17)
+
+egen n_prog = rowtotal(prog_1-prog_17)
 
 * individual beneficiaries
 
@@ -86,7 +100,7 @@ foreach j in 10 11 12 13 14 15 16 20 {
 
 */
 
-foreach var of varlist prog_* pension hh_safetynet* hh_inclusion hh_socinsur n_programs  {
+foreach var of varlist prog_* pension hh_safetynet* hh_inclusion hh_socinsur n_prog  {
 	tab MUN `var' if rel==1, row nofreq
 *	reg `var' ib3.provmun if rel==1, robust
 }

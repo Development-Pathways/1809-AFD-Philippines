@@ -13,14 +13,17 @@ recode Q3I (0/3 6/max = 0 "vulnerable") (4/5 = 1 "non-vulnerable"), gen(bop_1)
 recode Q3P (0/3 6/max = 0 "vulnerable") (4/5 = 1 "non-vulnerable"), gen(bop_2)
 
 egen bop = rowmax(bop_1 bop_2) // non-vulnerable if at least one b.o.p. is non-vulnerable
+
+replace bop = 0 if missing(bop)
+
 label define bop 0 "Vulnerable" 1 "Non-vulnerable"
 label values bop bop
 label variable bop "Basis of payment"
 
-egen hh_bop = max(bop), by(hhid) // vulnerable if no non-vulnerable incomes in hh 
+egen hh_bop = max(bop), by(hhid) // vulnerable if no non-vulnerable incomes in hh --> at least 1 non-vulnerable income in the household indicates resilience
 label values hh_bop bop
 
-gen hh_vul_work = 1 - hh_bop 
+gen hh_vul_bop = 1 - hh_bop // opposite: no regular income in the household indicates vulnerability
 
 * income from work
 /*
@@ -85,6 +88,14 @@ replace check_A = round(check_A)
 replace check_A=. if check_A==0
 assert check_A==1 if !missing(check_A)
 
+* main livelihood
+
+egen max = rowmax(s1A*)
+gen main_livelihood = ""
+foreach activity in "HHTIncome" "CROPTOT1" "LIVESTOCKTOT1" "FISHINGTOT1" "FOODSERVICETOT1" "WHOLESALETOT1" "MANUFACTURINGTOT1" "TRANSPORTATIONTOT1" "OTHERTOT1" "OTHERPROG1" "INCOMERECEIPTS1" {
+	replace main_livelihood = "`activity'" if max==s1A_`activity'
+}
+
 egen HHI_income = rowtotal(s2A_*) // calculated manually, surely there's a stata command
 
 replace HHI_income = . if HHTIncome==. & CROPTOT1==. & LIVESTOCKTOT1==. & FISHINGTOT1==. & FOODSERVICETOT1==. & WHOLESALETOT1==. & MANUFACTURINGTOT1==. & TRANSPORTATIONTOT1==. & OTHERTOT1==. & OTHERPROG1==. & INCOMERECEIPTS1==.
@@ -125,7 +136,7 @@ rename Q4_1_1A crop
 rename Q4_2_1A livestock
 rename Q4_3_1A fishing
 
-egen crop_lives_fish = rowtotal(crop livestock fishing)
+egen crop_lives_fish = rowmax(crop livestock fishing)
 
 rename Q4_4_1A foodservice
 rename Q4_5_1A wholesale
@@ -191,17 +202,24 @@ label variable other_sources "Other sources of income (modules 5 and 6)"
 					
 * number of income sources
 
-egen n_sources = rowtotal(hh_n_jobs crop livestock fishing foodservice wholesale manufacturing trasportation other_activ other_progs other_assistance other_pension other_rentals other_interests)		
+* egen n_sources = rowtotal(hh_n_jobs crop livestock fishing foodservice wholesale manufacturing trasportation other_activ other_progs other_assistance other_pension other_rentals other_interests)		
 
-egen n_sources_alt = rowtotal(hh_n_jobs crop livestock fishing foodservice wholesale manufacturing trasportation other_activ other_sources)		
+egen n_sources = rowtotal(hh_n_jobs crop livestock fishing foodservice wholesale manufacturing trasportation other_activ)		
 
 * * 
 
-gen hh_vuln = (crop_lives_fish==1 | hh_bop==0) // vulnerable if engages in farming or has vulnerable income from work 
+gen hh_vuln_livelihood = (crop_lives_fish==1 & hh_vul_bop==1) // vulnerable if engages in farming AND no regular income from employment 
+
+
+
 
 ** help from outside the household ** 
 
 gen network_help = (Q6_1_1A==1 | Q6_1_2A==1 | Q6_1_3A==1| Q15_6A==1 ) // received transfers from relative or friends or borrowed from friends and neighbours (no instances of received emergency cash tranfer from migrated hh memeber in response to shock)
+
+gen gave_gifts = (Q9_2_7>0 & Q9_2_7!=.)
+
+gen hh_network =  (Q6_1_1A==1 | Q6_1_2A==1 | Q6_1_3A==1| Q15_6A==1 | Q6_5_6A==1 | gave_gifts==1) // add repaid money and made transfers
 
 save "Processed/FSP Baseline Processed.dta", replace
 

@@ -78,8 +78,8 @@ forval j = 1/28 {								// shocks
 egen n_strategies = rowtotal(strategy*)
 
 * negative strategies: Sold land, sold productive asset, ate less food to reduce expenses, ate lower quality food to reduce expenses, took children out of school, sent household member away permanently, sent children to be fostered by relatives, sent children into domestic service, sent children to work somewhere other than domestic service
-egen negative_strat = rowmax(strategy2 strategy4 strategy9 strategy10 strategy11 strategy14 strategy15 strategy16 strategy17) //if any_shock==1 //<-- only for those who had shocks
-egen n_neg_strat = rowtotal(n_strat2 n_strat4 n_strat9 n_strat10 n_strat11 n_strat1 n_strat15 n_strat16 n_strat17) //if any_shock==1
+egen negative_strat = rowmax(strategy2 strategy4 strategy9 strategy10 strategy11 strategy14 strategy15 strategy16 strategy17) if any_shock==1 //<-- only for those who had shocks
+egen n_neg_strat = rowtotal(n_strat2 n_strat4 n_strat9 n_strat10 n_strat11 n_strat1 n_strat15 n_strat16 n_strat17) if any_shock==1
 
 	* climate shocks only 
 
@@ -87,7 +87,7 @@ egen n_neg_strat = rowtotal(n_strat2 n_strat4 n_strat9 n_strat10 n_strat11 n_str
 		egen cl_strategy`i' = rowmax(shock2strat`i' shock3strat`i' shock5strat`i' shock6strat`i' shock7strat`i' shock8strat`i')
 	}
 
-	egen negative_strat_climate = rowmax(cl_strategy2 cl_strategy4 cl_strategy9 cl_strategy10 cl_strategy11 cl_strategy14 cl_strategy15 cl_strategy16 cl_strategy17) //if any_climshock==1	
+	egen negative_strat_climate = rowmax(cl_strategy2 cl_strategy4 cl_strategy9 cl_strategy10 cl_strategy11 cl_strategy14 cl_strategy15 cl_strategy16 cl_strategy17) if any_climshock==1	
 	
 	
 * outcome of the shock 
@@ -104,9 +104,9 @@ replace loss_consum = 1 if Q16_`j'C`i'==3
 	}
 }
 
-gen loss_assets_cl = 0 //if any_climshock==1	
-gen loss_income_cl = 0 //if any_climshock==1	
-gen loss_consum_cl = 0 //if any_climshock==1	
+gen loss_assets_cl = 0 if any_climshock==1	
+gen loss_income_cl = 0 if any_climshock==1	
+gen loss_consum_cl = 0 if any_climshock==1	
 
 foreach j of numlist 2 3 5 6 7 8  {				// climate shocks
 	forval i = 1/4 {							// outcomes
@@ -120,6 +120,8 @@ egen loss_incomeassets_cl = rowmax(loss_assets_cl loss_income_cl)
 *egen loss_any = rowmax(loss_assets loss_income loss_consumption) 
 
 gen hh_adapted = (loss_incomeassets_cl==1 & negative_strat_climate==0) // experienced climate shock with loss of income and/or assets but did not resort to negative strategies
+
+gen no_negative_strat_climate = 1 - negative_strat_climate
 
 gen no_negative_strat = (loss_assets==1 | loss_income==1 | loss_consum==1) & (negative_strat==0)
 

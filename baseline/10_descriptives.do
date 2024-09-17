@@ -11,7 +11,7 @@ cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Eval
 
 use "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Evaluation (Assignment 1)/Data/Processed/FSP Baseline Processed_HH.dta", clear
 
-global all hhsize sex age n_child05 n_child017 has_child05 has_child017 hh_skipgen hh_singlepar hh_fitadults hh_depratio edu hh_maxedu hh_totedu hh_edupotratio hh_eduratio work work_hrs paid_work wage_work agri_work hh_fitwork hh_emprate hh_unfit_work hh_child_lab hh_vul_lab hh_n_jobs HHTIncome HHTIncome_pc crop livestock fishing foodservice wholesale manufacturing trasportation other_activ other_progs other_assista*e other_pension other_rentals other_interests other_other other_sources hh_farm_income hh_vuln_income hh_livelihood hh_livelihood*c hh_income n_sources s_hh_vuln_inc*e s_hh_vuln_liv*d HHI_income HHI_livelihood food_consumpt*n food_consumpt*c nonfood_consu*n neces_consump*n total_consump*n total_consump*c share_food share_necess tot_asset_value agri_land agri_land_sqm agri_land_pc resid_land resid_land_sqm n_shops_owned n_f_assets n_assets n_asset_types asset_index_f*m asset_index asset_index_l*d asset_index_t*l tot_savings savings_pc tot_borrow any_debt good_source bad_source good_reason bad_reason good_debt bad_debt hunger hunger_freq FIES_8 FIES_24 shop_diversity n_shocks any_shock n_disaster any_disaster n_climshock any_climshock n_strategies negative_strat n_neg_strat negative_stra*e hh_safetynet hh_inclusion n_programs hh_socinsur hh_treat_child hh_ill_child has_pregnant has_preg_or_c*d health_access day_care access_info hh_school prop_attend_s*l z_asset_value value_f_asset value_asset n_extra_assets value_extra_a*t assetindex_pc*f assetindex_pca asset_swindex hh_safetynet2 hh_safetynet*4p hh_n_child_lab hh_work hh_vuln crop_lives_fish hh_bop loss_consum network_help pregnant_health hh_SLP no_negative_s*t hh_adapted hh_wawork loss_assets loss_income loss_assets_cl loss_income_cl loss_consum_cl loss_incomeas*l hh_farming hh_vul_work hh_edu_pot
+global all hhsize sex age n_child05 n_child017 has_child05 has_child017 hh_skipgen hh_singlepar /*hh_fitadults*/ hh_depratio edu hh_maxedu hh_totedu hh_edupotratio hh_eduratio work work_hrs paid_work wage_work agri_work hh_fitwork hh_emprate hh_unfit_work hh_child_lab hh_vul_lab hh_n_jobs HHTIncome HHTIncome_pc crop livestock fishing foodservice wholesale manufacturing trasportation other_activ other_progs other_assista*e other_pension other_rentals other_interests other_other other_sources hh_farm_income hh_vuln_income hh_livelihood hh_livelihood*c hh_income n_sources s_hh_vuln_inc*e s_hh_vuln_liv*d HHI_income HHI_livelihood food_consumpt*n food_consumpt*c nonfood_consu*n neces_consump*n total_consump*n total_consump*c share_food share_necess tot_asset_value agri_land agri_land_sqm agri_land_pc resid_land resid_land_sqm n_shops_owned n_f_assets n_assets n_asset_types asset_index_f*m asset_index asset_index_l*d asset_index_t*l tot_savings savings_pc tot_borrow any_debt good_source bad_source good_reason bad_reason good_debt bad_debt hunger hunger_freq FIES_8 FIES_24 shop_diversity n_shocks any_shock n_disaster any_disaster n_climshock any_climshock n_strategies negative_strat n_neg_strat negative_stra*e hh_safetynet hh_inclusion n_prog hh_socinsur hh_treat_child hh_ill_child has_pregnant has_preg_or_c*d health_access day_care access_info hh_school prop_attend_s*l z_asset_value value_f_asset value_asset n_extra_assets value_extra_a*t assetindex_pc*f assetindex_pca asset_swindex hh_safetynet2 hh_safetynet*4p hh_n_child_lab hh_work hh_vuln crop_lives_fish hh_bop loss_consum network_help pregnant_health hh_SLP no_negative_s*t hh_adapted hh_wawork loss_assets loss_income loss_assets_cl loss_income_cl loss_consum_cl loss_incomeas*l hh_farming hh_vul_work hh_edu_pot
 
 eststo clear
 bysort MUN: eststo: quietly estpost sum $all
@@ -297,4 +297,43 @@ foreach var of varlist $varlist{
  putexcel B3 = "Source: Walang Gutom RCT Baseline ($S_DATE)",  font("calibri" , 9)
 }
 */
+*/
 
+
+use "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Evaluation (Assignment 1)/Data/Processed/FSP Baseline Processed_HH.dta", clear
+
+global darkblue 	"0 57 114"
+global darkorange 	"239 93 59"
+global lightgrey 	"242 242 242"
+global teal 		"41 139 156"
+global yellow 		"250 180 31"
+global purple 		"112 48 160"
+
+// plot
+
+twoway scatter hh_livelihood n_sources
+
+tab hhsize_bin MUN, col nofreq
+
+graph box food_consumption_pc /*share_food*/ , over(MUN)
+
+graph box share_food , over(MUN)
+
+graph box hhsize , over(MUN)
+
+graph box hhsize, over(MUN) box(1, fcolor($lightgrey ) lcolor($darkblue )) medtype(cline) medline(lcolor($darkblue )) cwhisker lines(lcolor($darkblue )) marker(1, mcolor($darkblue )) ytitle("Household size") graphregion(fcolor($lightgrey ) lcolor($lightgrey ) ifcolor($lightgrey ) ilcolor($lightgrey )) plotregion(fcolor($lightgrey) lcolor($lightgrey ) ifcolor($lightgrey ) ilcolor($lightgrey ))
+
+mean prog_8, over(MUN)
+mean hh_safetynet_no4p, over(MUN)
+
+tab n_safetynet MUN, col nofreq
+graph hbox n_safetynet , over(MUN)
+
+recode n_sources (6/max = 6 "6 or more"), gen (n_sources_bin)
+tab n_sources_bin MUN, col nofreq
+
+mean any_climshock //, over(MUN)
+
+mean crop livestock fishing foodservice wholesale manufacturing trasportation other_activ other_sources //, over (MUN)
+
+tab main_livelihood MUN, col nofreq
