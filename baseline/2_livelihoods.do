@@ -145,8 +145,27 @@ rename Q4_7_1A trasportation
 rename Q4_8_1A other_activ
 drop Q4*
 
+* household livelihood based on sector, not source
+*1* crop livestock fishing
 gen farming_ind = (sector==1 | sector_2==1 | crop_lives_fish==1)
 egen hh_farming = max(farming_ind), by(hhid)
+*2* foodservice
+gen foodservice_ind = (sector==9 | sector_2==9 | foodservice==1)
+egen hh_foodservice = max(foodservice_ind), by(hhid)
+*3* wholesale/trade
+gen wholesale_ind = (sector==7 | sector_2==7 | wholesale==1)
+egen hh_wholesale = max(wholesale_ind), by(hhid)
+*4* manufacturing
+gen manufacturing_ind = (sector==3 | sector_2==3 | manufacturing==1)
+egen hh_manufacturing = max(manufacturing_ind), by(hhid)
+*5* transportation
+gen transportation_ind = (sector==8 | sector_2==8 | trasportation==1)
+egen hh_transportation = max(transportation_ind), by(hhid)
+*6* other incl. construction
+gen other_activ_ind = ( other_activ==1 | ///
+sector==2 | sector==4  | sector==5  | sector==6 | (sector>=10 & !missing(sector)) | ///
+sector_2==2 | sector_2==4  | sector_2==5  | sector_2==6 | (sector_2>=10 & !missing(sector_2)) )
+egen hh_other_activ = max(other_activ_ind), by(hhid)
 
 
 * other income
@@ -209,9 +228,6 @@ egen n_sources = rowtotal(hh_n_jobs crop livestock fishing foodservice wholesale
 * * 
 
 gen hh_vuln_livelihood = (crop_lives_fish==1 & hh_vul_bop==1) // vulnerable if engages in farming AND no regular income from employment 
-
-
-
 
 ** help from outside the household ** 
 

@@ -337,3 +337,7 @@ mean any_climshock //, over(MUN)
 mean crop livestock fishing foodservice wholesale manufacturing trasportation other_activ other_sources //, over (MUN)
 
 tab main_livelihood MUN, col nofreq
+
+tabstat hh_farming hh_foodservice hh_wholesale hh_manufacturing hh_transportation hh_other_activ, statistics( mean ) by(MUN)
+
+
