@@ -1,16 +1,16 @@
-// date: 25/07/2024
+// date: 19/09/2024
 // project: 1809 ADF Philippines - Assignment 1: impact evaluation 
 // author: silvia
-// purpose: clean data from Walang Gutom RCT baseline survey, provided by ADB through AFD
+// purpose: clean data from Walang Gutom RCT endline survey, provided by ADB through AFD
 
 * change directory
 cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Evaluation (Assignment 1)/Data"
 
-use "Processed/FSP Baseline Processed.dta", clear
+use "Processed/FSP Endline Processed.dta", clear
 
 * basis of payment
-recode Q3I (0/3 6/max = 0 "vulnerable") (4/5 = 1 "non-vulnerable"), gen(bop_1)
-recode Q3P (0/3 6/max = 0 "vulnerable") (4/5 = 1 "non-vulnerable"), gen(bop_2)
+recode Q3j (-1 = .) (0/3 6/max = 0 "vulnerable") (4/5 = 1 "non-vulnerable"), gen(bop_1)
+recode Q3p (-1 = .) (0/3 6/max = 0 "vulnerable") (4/5 = 1 "non-vulnerable"), gen(bop_2)
 
 egen bop = rowmax(bop_1 bop_2) // non-vulnerable if at least one b.o.p. is non-vulnerable
 
@@ -25,35 +25,14 @@ label values hh_bop bop
 
 gen hh_vul_bop = 1 - hh_bop // opposite: no regular income in the household indicates vulnerability
 
-* income from work
-/*
-HHMPINCOME = income from primary occupation (IND) <-- wage 
-HHMSINCOME = income from seondary occupation (IND) <-- wage
-HHMOIncome = income from other occupation (?)
-HHTIncome = total income from work (HH)
-*/
-
-* income aggregates (HH)
+***
 
 /*
-HHTIncome = total income from work (module 3) - 6 months
-CROPTOT1 LIVESTOCKTOT1 FISHINGTOT1 FOODSERVICETOT1 WHOLESALETOT1 MANUFACTURINGTOT1 TRANSPORTATIONTOT1 OTHERTOT1 = income from entrepreneurial activities (module 4) - 12 months
-ENTREPRENEURIALTOT1 = total income from entrepreneurial activities - 12 months
-OTHERPROG1 = income from programs (module 5) - 12 months
-INCOMERECEIPTS1 = income from other receipts (module 6) - 12 months
-	Q6_1_T = cash assistance total
-	Q6_2_T = pension and retirement benefits total
-	Q6_3_T = rentals total
-	Q6_4_T = interests and dividends total 
-	Q6_5_T = other receipts total 
-INCOMEALLSOURCES1 = total household income - 12 months 
-*/
 
-// 1 hh for which missing INCOMEALLSOURCES1 but not missing income components 
-replace INCOMEALLSOURCES1 = HHTIncome if missing(INCOMEALLSOURCES1) & (HHTIncome!=. | CROPTOT1!=. | LIVESTOCKTOT1!=. | FISHINGTOT1!=. | FOODSERVICETOT1!=. | WHOLESALETOT1!=. | MANUFACTURINGTOT1!=. | TRANSPORTATIONTOT1!=. | OTHERTOT1!=. | OTHERPROG1!=. | INCOMERECEIPTS1!=.)
+use "/Users/silvianastasi/Downloads/ADB Philippines Food Stamp IE data shared/endline data/endline_household_data.dta"
 
-	egen CHECK = rowtotal(HHTIncome CROPTOT1 LIVESTOCKTOT1 FISHINGTOT1 FOODSERVICETOT1 WHOLESALETOT1 MANUFACTURINGTOT1 TRANSPORTATIONTOT1 OTHERTOT1 OTHERPROG1 INCOMERECEIPTS1) if !missing(INCOMEALLSOURCES1)
-	assert CHECK==INCOMEALLSOURCES1
+egen check = rowtotal(wages_1_mo_total crop_sold_php_1mo livestock_sold_php_1mo fish_sold_php_1mo enterprise_food_rev_1mo enterprise_retail_rev_1mo enterprise_manufacturing_rev_1mo enterprise_transport_rev_1mo enterprise_other_rev_1mo other_income_php_1mo health_subsidy_php_1mo cash_assistance_php_1mo pension_income_php_1mo rental_income_php_1mo interest_income_php_1mo)
+assert round(check) == round(hh_income_1_mo) if !missing(hh_income_1_mo)
 
 egen hh_farm_income = rowtotal(CROPTOT1 LIVESTOCKTOT1 FISHINGTOT1)
 
@@ -88,13 +67,6 @@ replace check_A = round(check_A)
 replace check_A=. if check_A==0
 assert check_A==1 if !missing(check_A)
 
-* main livelihood
-
-egen max = rowmax(s1A*)
-gen main_livelihood = ""
-foreach activity in "HHTIncome" "CROPTOT1" "LIVESTOCKTOT1" "FISHINGTOT1" "FOODSERVICETOT1" "WHOLESALETOT1" "MANUFACTURINGTOT1" "TRANSPORTATIONTOT1" "OTHERTOT1" "OTHERPROG1" "INCOMERECEIPTS1" {
-	replace main_livelihood = "`activity'" if max==s1A_`activity'
-}
 
 egen HHI_income = rowtotal(s2A_*) // calculated manually, surely there's a stata command
 
@@ -119,6 +91,29 @@ replace HHI_livelihood = . if HHTIncome==. & CROPTOT1==. & LIVESTOCKTOT1==. & FI
 * set to 1 (no diversification) if income comes from programmes and receipts only
 replace HHI_livelihood = 1 if HHI_livelihood==0
 
+
+* main livelihood
+
+egen max = rowmax(HHTIncome CROPTOT1 LIVESTOCKTOT1 FISHINGTOT1 FOODSERVICETOT1 WHOLESALETOT1 MANUFACTURINGTOT1 TRANSPORTATIONTOT1 OTHERTOT1)
+gen main_livelihood_str = ""
+foreach activity in "HHTIncome" "CROPTOT1" "LIVESTOCKTOT1" "FISHINGTOT1" "FOODSERVICETOT1" "WHOLESALETOT1" "MANUFACTURINGTOT1" "TRANSPORTATIONTOT1" "OTHERTOT1" "OTHERPROG1" "INCOMERECEIPTS1" {
+	replace main_livelihood = "`activity'" if max==`activity' & !missing(`activity')
+}
+encode main_livelihood_str, gen(main_livelihood) label(lvlhd)
+
+          CROPTOT1 |        367        6.90        6.90
+       FISHINGTOT1 |        147        2.76        9.66
+   FOODSERVICETOT1 |        213        4.00       13.67
+         HHTIncome |      3,213       60.39       74.06
+   INCOMERECEIPTS1 |        437        8.21       82.27 *
+     LIVESTOCKTOT1 |         74        1.39       83.67
+ MANUFACTURINGTOT1 |         20        0.38       84.04
+        OTHERPROG1 |        482        9.06       93.10 *
+         OTHERTOT1 |         29        0.55       93.65
+TRANSPORTATIONTOT1 |         78        1.47       95.11
+     WHOLESALETOT1 |        260        4.89      100.00
+*/
+
 * hh activities
 
 	* number of jobs (wage employment only)
@@ -127,100 +122,61 @@ replace HHI_livelihood = 1 if HHI_livelihood==0
 	gen work2 = (work_type_2==1)
 	egen n_jobs = rowtotal(work1 work2)
 	egen hh_n_jobs = total(n_jobs), by(hhid)
+	
+	gen jobs_pc = hh_n_jobs/hhsize
 
-forval i = 1/8 {
-	replace Q4_`i'_1A = 2-Q4_`i'_1A // recode from 1-2 to 0-1
-}
+egen crop_lives_fish = rowmax(enterprise_crop_farming enterprise_livestock enterprise_fish)
 
-rename Q4_1_1A crop
-rename Q4_2_1A livestock
-rename Q4_3_1A fishing
+* household livelihood based on sector, not source
 
-egen crop_lives_fish = rowmax(crop livestock fishing)
-
-rename Q4_4_1A foodservice
-rename Q4_5_1A wholesale
-rename Q4_6_1A manufacturing
-rename Q4_7_1A trasportation
-rename Q4_8_1A other_activ
-drop Q4*
-
+*1* crop livestock fishing
 gen farming_ind = (sector==1 | sector_2==1 | crop_lives_fish==1)
 egen hh_farming = max(farming_ind), by(hhid)
-
+*2* foodservice
+gen foodservice_ind = (sector==9 | sector_2==9 | enterprise_food==1)
+egen hh_foodservice = max(foodservice_ind), by(hhid)
+*3* wholesale/trade
+gen wholesale_ind = (sector==7 | sector_2==7 | enterprise_retail==1)
+egen hh_wholesale = max(wholesale_ind), by(hhid)
+*4* manufacturing
+gen manufacturing_ind = (sector==3 | sector_2==3 | enterprise_manufacturing==1)
+egen hh_manufacturing = max(manufacturing_ind), by(hhid)
+*5* transportation
+gen transportation_ind = (sector==8 | sector_2==8 | enterprise_transport==1)
+egen hh_transportation = max(transportation_ind), by(hhid)
+*6* other incl. construction
+gen other_activ_ind = ( enterprise_other==1 | ///
+sector==2 | sector==4  | sector==5  | sector==6 | (sector>=10 & !missing(sector)) | ///
+sector_2==2 | sector_2==4  | sector_2==5  | sector_2==6 | (sector_2>=10 & !missing(sector_2)) )
+egen hh_other_activ = max(other_activ_ind), by(hhid)
 
 * other income
-
-gen other_progs = (	Q5_1A	== 1 | ///
-					Q5_2A	== 1 | ///
-					Q5_3A	== 1 | ///
-					Q5_4A	== 1 | ///
-					Q5_5A	== 1 | ///
-					Q5_6A	== 1 | ///
-					Q5_7A	== 1 | ///
-					Q5_8A	== 1 | ///
-					Q5_9A	== 1 | ///
-					Q5_10C	== 1 | ///
-					Q5_11C	== 1 | ///
-					Q5_12C	== 1 | ///
-					Q5_13C	== 1 | ///
-					Q5_14C	== 1 | ///
-					Q5_15C	== 1 | ///
-					Q5_16C	== 1 | ///
-					Q5_20C_OTH	== 1) 
 					
-gen other_assistance = (Q6_1_1A	== 1 | ///
-						Q6_1_2A	== 1 | ///
-						Q6_1_3A	== 1 | ///
-						Q6_1_4A	== 1 )
-
-gen other_pension = (Q6_2_1A== 1 )
-					
-gen other_rentals = (Q6_3_1A== 1 | ///
-					Q6_3_2A	== 1 | ///
-					Q6_3_3A	== 1 )
-					
-gen other_interests = (Q6_4_1A	== 1 | ///
-					Q6_4_2A	== 1 | ///
-					Q6_4_3A	== 1 )
-					
-gen other_other = ( Q6_5_1A	== 1 | ///
-					Q6_5_2A	== 1 | ///
-					Q6_5_3A	== 1 | ///
-					Q6_5_4A	== 1 | ///
-					Q6_5_5A	== 1 | ///
-					Q6_5_6A	== 1 | ///
-					Q6_5_7A	== 1 | ///
-					Q6_5_8A	== 1 | ///
-					Q6_5_9A	== 1 | ///
-					Q6_5_10A== 1 | ///
-					Q6_5_11A== 1 )
-					
-egen other_sources = rowmax(other_progs other_assistance other_pension other_rentals other_interests)
+egen other_sources = rowmax(health_subsidy_1-health_subsidy_99 cash_assistance_1-cash_assistance_99  other_subsidy_* receives_pension receives_rental_income receives_interest_income receives_other_income receives_interest_relatives)
 label variable other_sources "Other sources of income (modules 5 and 6)"
 
 					
 * number of income sources
 
-* egen n_sources = rowtotal(hh_n_jobs crop livestock fishing foodservice wholesale manufacturing trasportation other_activ other_progs other_assistance other_pension other_rentals other_interests)		
+* egen n_sources = rowtotal(hh_n_jobs health_subsidy_1-health_subsidy_99 cash_assistance_1-cash_assistance_99  other_subsidy_* receives_pension receives_rental_income receives_interest_income receives_other_income receives_interest_relatives)		
 
-egen n_sources = rowtotal(hh_n_jobs crop livestock fishing foodservice wholesale manufacturing trasportation other_activ)		
+egen n_sources = rowtotal(hh_n_jobs enterprise_crop_farming enterprise_livestock enterprise_fish enterprise_food enterprise_retail enterprise_manufacturing enterprise_transport enterprise_other)		
 
 * * 
 
 gen hh_vuln_livelihood = (crop_lives_fish==1 & hh_vul_bop==1) // vulnerable if engages in farming AND no regular income from employment 
 
-
-
-
 ** help from outside the household ** 
 
-gen network_help = (Q6_1_1A==1 | Q6_1_2A==1 | Q6_1_3A==1| Q15_6A==1 ) // received transfers from relative or friends or borrowed from friends and neighbours (no instances of received emergency cash tranfer from migrated hh memeber in response to shock)
+foreach var of varlist Q16_D_* {
+	count if `var'=="19"
+}
+destring Q16_D_*, replace
 
-gen gave_gifts = (Q9_2_7>0 & Q9_2_7!=.)
+gen network_help = (Q6_1_A1==1 | Q6_1_A2==1 | Q6_1_A3==1| borrow_friends==1 | Q16_D_2==19 ) // received transfers from relative or friends or borrowed from friends and neighbours or received emergency cash tranfer from migrated hh memeber in response to shock
 
-gen hh_network =  (Q6_1_1A==1 | Q6_1_2A==1 | Q6_1_3A==1| Q15_6A==1 | Q6_5_6A==1 | gave_gifts==1) // add repaid money and made transfers
+gen gave_gifts = (expenses_7>0 & expenses_7!=.)
 
-save "Processed/FSP Baseline Processed.dta", replace
+gen hh_network =  (Q6_1_A1==1 | Q6_1_A2==1 | Q6_1_A3==1| borrow_friends==1 | Q6_5_A4==1 | Q6_5_A6==1 | gave_gifts==1 | Q16_D_2==19) // add repaid money and made transfers
 
-
+save "Processed/FSP Endline Processed.dta", replace

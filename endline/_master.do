@@ -1,7 +1,7 @@
-// date: 31/07/2024
+// date: 19/09/2024
 // project: 1809 ADF Philippines - Assignment 1: impact evaluation 
 // author: silvia
-// purpose: run scripts for the baseline analysis of Walang Gutom RCT 
+// purpose: run scripts for the endline analysis of Walang Gutom RCT 
 
 global github "~/Documents/GitHub/1809-AFD-Philippines/endline"
 

@@ -1,32 +1,22 @@
-// date: 25/07/2024
+// date: 19/09/2024
 // project: 1809 ADF Philippines - Assignment 1: impact evaluation 
 // author: silvia
-// purpose: clean data from Walang Gutom RCT baseline survey, provided by ADB through AFD
+// purpose: clean data from Walang Gutom RCT endline survey, provided by ADB through AFD
 
 * change directory
 cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Evaluation (Assignment 1)/Data"
 
-use "Processed/FSP Baseline Processed.dta", clear
+use "Processed/FSP Endline Processed.dta", clear
 
 * food security (module 7)
 
-recode Q7_1_A (1=1 "Yes") (2=0 "No"), gen(hunger) // past 3 months
-rename Q7_1_B hunger_freq // frequency in past 3 months
-* Q7_2A* = food security (module 7)
+	* any_hunger_3mo
 
 *** Food Insecurity Experience Scale *
 
-forval n = 1/8 {
-	replace Q7_2A`n' = Q7_2A`n' - 1 
-	replace Q7_2A`n' = . if Q7_2A`n' > 3 
-	recode Q7_2A`n' 0=0 1/3=1, gen(fies_`n')
-}
+rename fies_raw FIES_8
 
-egen FIES_24 = rowtotal (Q7_2A*)
-
-egen FIES_8 = rowtotal(fies_*)
-
-* food sources / where food is bought 
+/* food sources / where food is bought 
 
 forval n = 1/7 { // types of places to buy food
 	gen shop_`n' = (Q10_4_3_1 ==`n' | Q10_4_3_2 ==`n' | Q10_4_3_3 ==`n' | Q10_4_3_4 ==`n' | Q10_4_3_5 ==`n' | Q10_4_3_6 ==`n' | Q10_4_3_7 ==`n' | Q10_4_3_8 ==`n' | Q10_4_3_9 ==`n') // types of food
@@ -35,36 +25,43 @@ forval n = 1/7 { // types of places to buy food
 * 0-7 index
 egen shop_diversity = rowtotal(shop_*)
 
+*/
+
 **************************************
 		*** shocks ***
 **************************************
 
 forval i = 1/28 {
-	recode Q16_`i'A 1=1 2=0
+	recode Q16_A`i' 1=1 2=0
+	rename Q16_A`i' Q16_`i'A
 }
 
-	* check incidence of shocks
-	tab MUN Q16_1A if rel==1, row
-	mean Q16_1A if rel==1, over(MUN)
+destring Q16_D_* Q16_B_* Q16_C_* , replace
 
-egen n_shocks = rowtotal(Q16_*A)
+*** shock between baseline and endline (november 23 - july 24)
+
+forval i = 1/28 {
+	clonevar recent_shock_`i' = shock_`i'
+	replace recent_shock_`i' = 0 if (Q16_B_`i'>=8 & Q16_B_`i'<=11)
+}
+
+egen n_shocks = rowtotal(Q16_A*)
 gen any_shock = n_shocks>0 & !missing(n_shocks)
-
-* disasters (0-7)
-
-egen n_disaster = rowtotal(Q16_1A Q16_2A Q16_3A Q16_4A Q16_5A Q16_6A Q16_7A)
-gen any_disaster = n_disaster>0 & !missing(n_disaster)
 
 * climate-related shocks (0-6): typhoon, flooding, landslide, drought, fire, crop pest/disease
 
-egen n_climshock = rowtotal(Q16_2A Q16_3A Q16_5A Q16_6A Q16_7A Q16_8A)
+egen n_climshock = rowtotal(shock_2 shock_3 shock_5 shock_6 shock_7 shock_8)
 gen any_climshock = n_climshock>0 & !missing(n_climshock)
+
+egen n_r_climshock = rowtotal(recent_shock_2 recent_shock_3 recent_shock_5 recent_shock_6 recent_shock_7 recent_shock_8)
+gen any_r_climshock = n_climshock>0 & !missing(n_climshock)
+
 
 * coping strategies
 
 forval j = 1/28 {								// shocks
 	forval i = 1/23 {							// strategies
-		gen shock`j'strat`i' = (Q16_`j'D ==`i')	// dummies
+		gen shock`j'strat`i' = (Q16_D_`j' ==`i')	// dummies
 		
 	}
 }
@@ -92,15 +89,15 @@ egen n_neg_strat = rowtotal(n_strat2 n_strat4 n_strat9 n_strat10 n_strat11 n_str
 	
 * outcome of the shock 
 
-gen loss_assets = 0 //if any_climshock==1	
-gen loss_income = 0 //if any_climshock==1	
-gen loss_consum = 0 //if any_climshock==1	
+gen loss_assets = 0 if any_climshock==1	
+gen loss_income = 0 if any_climshock==1	
+gen loss_consum = 0 if any_climshock==1	
 
 forval j = 1/28 {								// shocks
 	forval i = 1/4 {							// outcomes
-replace loss_assets = 1 if Q16_`j'C`i'==1
-replace loss_income = 1 if Q16_`j'C`i'==2
-replace loss_consum = 1 if Q16_`j'C`i'==3
+replace loss_assets = 1 if Q16_C_`j'_O`i'==1
+replace loss_income = 1 if Q16_C_`j'_O`i'==2
+replace loss_consum = 1 if Q16_C_`j'_O`i'==3
 	}
 }
 
@@ -110,9 +107,9 @@ gen loss_consum_cl = 0 if any_climshock==1
 
 foreach j of numlist 2 3 5 6 7 8  {				// climate shocks
 	forval i = 1/4 {							// outcomes
-replace loss_assets_cl = 1 if Q16_`j'C`i'==1
-replace loss_income_cl = 1 if Q16_`j'C`i'==2
-replace loss_consum_cl = 1 if Q16_`j'C`i'==3
+replace loss_assets_cl = 1 if Q16_C_`j'_O`i'==1
+replace loss_income_cl = 1 if Q16_C_`j'_O`i'==2
+replace loss_consum_cl = 1 if Q16_C_`j'_O`i'==3
 	}
 }
 
@@ -137,7 +134,16 @@ su shock*_loss* if rel==1 & any_shock==1
 */
 
 drop shock*strat*
+
+**************************************
+	*** subjective resilience ***
+**************************************
+
+forval i = 1/4 {
+	recode resilience_climate_`i' (1/2=1 "Will cope") (3=0 "DK") (4/5=-1 "Will not cope"), gen(subj_res3v_`i')
+	recode resilience_climate_`i' (1/2=1 "Confident will cope") (3/5=0 "Not confident"), gen(subj_res2v_`i')
+}
 	
 * br hhid Q16_*D strategy* n_strat* if rel==1 & n_shocks>1
 
-save "Processed/FSP Baseline Processed.dta", replace
+save "Processed/FSP Endline Processed.dta", replace

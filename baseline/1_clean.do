@@ -53,6 +53,11 @@ rename NO_MEM hhsize
 	drop head_count
 
 recode hhsize (1=1 "1 Person") (2=2 "2 Persons") (3/5=3 "3-5 Persons")   (6/7=4 "6-7 Persons") (8/10=5 "8-10 Persons") (11/max =6 "More than 10 persons") , gen(hhsize_bin)	
+
+su hhsize, d
+gen hhsize_2 = (hhsize>r(p50))
+label define hhsize_2 0 "Smaller (1-7)" 1 "Larger (8+)"
+label values hhsize_2 hhsize_2
 	
 /* household head - add labels or recode
 foreach x in sex age edu marital ethnicity work {

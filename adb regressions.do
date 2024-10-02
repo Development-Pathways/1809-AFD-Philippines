@@ -1,4 +1,156 @@
+// date: 21/09/2024
+// project: 1809 ADF Philippines - Assignment 1: impact evaluation 
+// author: silvia
+// purpose: regressions 
+ 
+clear all
+set more off
+set maxvar 10000
 
+/*
+* Install ftools (remove program if it existed previously)
+ ado uninstall ftools
+net install ftools, from("https://raw.githubusercontent.com/sergiocorreia/ftools/master/src/")
+
+* Install reghdfe 6.x
+ ado uninstall reghdfe
+net install reghdfe, from("https://raw.githubusercontent.com/sergiocorreia/reghdfe/master/src/")
+
+ ado uninstall ivreghdfe
+ ssc install ivreg2 // Install ivreg2, the core package
+net install ivreghdfe, from(https://raw.githubusercontent.com/sergiocorreia/ivreghdfe/master/src/)
+*/
+
+use "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Evaluation (Assignment 1)/Data/Processed/FSP Endline Processed_HH.dta", clear
+
+replace endline = 0 if missing(endline)
+assert round==endline
+
+******************
+* balanced panel *
+keep if balance==1
+******************
+
+gen Dit = treatment * endline
+
+gen Dit_registered = registered_walang_gutom * endline
+replace Dit_registered = 0 if missing(Dit_registered)
+
+/* SPECIFICATIONS *
+
+*did
+reghdfe `var' endline##treatment, absorb(i.pair_rank) vce(cluster pair_rank)
+
+*twfe
+reghdfe `var' Dit, absorb(i.endline i.hhid) vce(cluster pair_rank)
+
+*cs
+reghdfe `var' treatment if endline == 1, absorb(i.pair_rank) vce(cluster pair_rank)
+
+* LATE endline - cs IV pooled
+ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1, absorb(i.pair_rank) cluster(final_cluster)
+	* cs IV urban
+	ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & urban ==1, absorb(i.pair_rank) cluster(final_cluster)
+	* cs IV rural
+	ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & urban ==0, absorb(i.pair_rank) cluster(final_cluster)
+
+* LATE twfe - panel IV pooled
+ivreghdfe `var' (Dit_registered = Dit), absorb(i.hhid i.endline) cluster(final_cluster)
+
+*/
+
+ ****
+
+cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Evaluation (Assignment 1)/Data/Tables/regressions"
+
+* endline cross-section (pair FE)
+ 
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp $other_outcomes locus_control_* { 
+	reghdfe `var' treatment if endline == 1, absorb(i.pair_rank) vce(cluster pair_rank)
+	outreg2 using "itt_endline.xls", append ctitle (`var')			
+}
+
+*  two-way FE // too few obs
+ 
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 { 
+	reghdfe `var' Dit, absorb(i.endline i.hhid) vce(cluster pair_rank)
+	outreg2 using "itt_panel.xls", append ctitle (`var')			
+}
+
+* Difference in differences // it omits endline ans interaction (probs equivalent to cs then)
+
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp $other_outcomes { 
+	reghdfe `var' endline##treatment, absorb(i.pair_rank) vce(cluster pair_rank)
+*	outreg2 using "did.xls", append ctitle (`var')			
+}
+
+* LATE endline
+ 
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp $other_outcomes locus_control_* { 
+	ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1, absorb(i.pair_rank) cluster(final_cluster)
+	* reghdfe `var' registered_walang_gutom if endline == 1, absorb(i.pair_rank) vce(cluster pair_rank)
+	outreg2 using "late_endline.xls", append ctitle (`var')			
+}
+ 
+* LATE panel
+ 
+	replace hunger= any_hunger_3mo if missing(hunger) 
+	recode hunger_freq (1/2=0) (3/4=1), gen(hunger_freq2)
+	replace hunger_frequent = hunger_freq2 if missing(hunger_frequent)
+	replace hunger_frequent = 0 if missing(hunger_frequent)
+	
+ 	ivreghdfe hunger_frequent (Dit_registered = Dit) if balance==1 , absorb(i.hhid i.endline) cluster(final_cluster)
+
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp any_debt bad_debt n_f_assets n_assets n_extra_assets n_asset_types n_jobs hh_farming { 
+	ivreghdfe `var' (Dit_registered = Dit) if balance==1 , absorb(i.hhid i.endline) cluster(final_cluster)
+	* reghdfe `var' endline##registered_walang_gutom, absorb(i.pair_rank) vce(cluster pair_rank)
+	outreg2 using "late_panel.xls", append ctitle (`var')			
+}
+
+*  HETEROGENITY ANALYSIS
+
+* study site (tondo vs other)
+
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp $other_outcomes locus_control_* { 
+	reghdfe `var' treatment if endline == 1 & MUN==138060, absorb(i.pair_rank) vce(cluster pair_rank)
+	outreg2 using "itt_endline_by_site.xls", append ctitle (Tondo_`var')			
+}
+
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp $other_outcomes locus_control_* { 
+	reghdfe `var' treatment if endline == 1 & MUN!=138060, absorb(i.pair_rank) vce(cluster pair_rank)
+	outreg2 using "itt_endline_by_site.xls", append ctitle (Other_`var')			
+}
+
+* gender of recipient
+
+* household size
+
+* farming as main livelihood
+
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp $other_outcomes locus_control_* { 
+	reghdfe `var' treatment if endline == 1 & hh_farming==1, absorb(i.pair_rank) vce(cluster pair_rank)
+	outreg2 using "itt_endline_farmers.xls", append ctitle (`var')			
+}
+
+
+* RESILIENCE ANALYSIS
+
+reghdfe negative_strat_climate treatment if endline==1 & MUN==138060 & any_climshock==1, absorb(i.pair_rank) vce(cluster pair_rank)
+	outreg2 using "itt_endline_tondo.xls"		
+reghdfe negative_strat_climate##treatment if endline==1 & MUN==138060 & any_climshock==1, absorb(i.pair_rank) vce(cluster pair_rank)
+	outreg2 using "itt_endline_tondo.xls"			
+
+	
+reghdfe total_food_1mo_php any_climshock##treatment if endline==1 & MUN==138060, absorb(i.pair_rank) vce(cluster pair_rank)
+* food consumption doesn't capture shock so doesn't capture resilience	
+	* try only typhoon and flood 
+	* tondo first
+
+reghdfe fies any_climshock##treatment if endline==1 & MUN==138060, absorb(i.pair_rank) vce(cluster pair_rank)
+	
+	
+ 
+/*
 * outcome variables used for regressions
 cantril_ladder self_poverty harvest_php_rice harvest_php_corn harvest_php_veg crop_harvest_php total_nb_nonfarm_assets farm_asset_spend_1y_php total_nb_farm_assets ///
 any_hunger_3mo hunger_frequent fies fies_raw hh_average_fcs_score hh_average_fcs_poor hh_average_fcs_borderline hh_average_fcs_acceptable adult_average_fcs_score adult_average_fcs_poor adult_average_fcs_borderline adult_average_fcs_acceptable male_adult_fcs_score male_adult_fcs_poor male_adult_fcs_borderline male_adult_fcs_acceptable female_adult_fcs_score female_adult_fcs_poor female_adult_fcs_borderline female_adult_fcs_acceptable adult_avg_fcs_cereal adult_avg_fcs_pulses adult_avg_fcs_vegetable adult_avg_fcs_fruit adult_avg_fcs_oil_fats adult_avg_fcs_meat adult_avg_fcs_milk adult_avg_fcs_sugar child_average_fcs_score child_average_fcs_poor child_average_fcs_borderline child_average_fcs_acceptable fcs_grain_little fcs_tubers_little fcs_pulses_little fcs_green_veg_little fcs_vit_a_little fcs_other_veg_little fcs_fruit_little fcs_meat_little fcs_fish_little fcs_milk_little fcs_eggs_little fcs_sugar_little fcs_oil_little fcs_nuts_little fcs_condiments_little ///
@@ -8,19 +160,14 @@ received_train_nutrition quiz_index_correct quiz_share_correct total_food_1mo_ph
  treatment // explanatory var
  endline // endline only 
  pair_rank // fixed effects
- clustervar // cluster 
+ final_cluster // cluster 
  farming_rice_at_baseline farming_corn_at_baseline farming_veg_at_baseline farming_at_baseline purchased_1_baseline /// condition on baseline characteristic
- INTNO // household level fixed effects
+ hhid // household level fixed effects
  larger_households max_presence_child_05 // condition on hh characteristics 
  meal_planner_respond // condition on respondent 
  MUN // condition on location 
  dummy_4p_any // condition on 4P receipt (either base or end)
  cshock_since_baseline // condition on experience of shocks
  offered_wg // didn't receive treatment but was offered, didn't receive treatment and wasn't offered ?
- 
- 
- 
- 
- 
- 
+*/ 
  

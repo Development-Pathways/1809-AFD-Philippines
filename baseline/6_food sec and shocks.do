@@ -46,6 +46,16 @@ forval i = 1/28 {
 	* check incidence of shocks
 	tab MUN Q16_1A if rel==1, row
 	mean Q16_1A if rel==1, over(MUN)
+	
+	* monthly
+	
+	tab Q16_2B MUN if rel==1
+	tab Q16_3B MUN if rel==1
+	tab Q16_5B MUN if rel==1
+	tab Q16_6B MUN if rel==1
+	tab Q16_7B MUN if rel==1
+	tab Q16_8B MUN if rel==1
+
 
 egen n_shocks = rowtotal(Q16_*A)
 gen any_shock = n_shocks>0 & !missing(n_shocks)
