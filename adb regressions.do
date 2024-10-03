@@ -238,14 +238,28 @@ foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_i
 }
 
 foreach MUN of numlist 20313 50171 160670 190870 138060 {
-		* ivreghdfe subj_res_score (registered_walang_gutom = treatment) if endline == 1 & MUN == `MUN' , absorb(i.pair_rank) cluster(final_cluster)
-		ivreghdfe subj_res_score (registered_walang_gutom = treatment) if endline == 1 & MUN == `MUN' & any_climshock==0 , absorb(i.pair_rank) cluster(final_cluster)
-		outreg2 using "subjres_MUN.xls", append ctitle (noshock_`MUN')
+	foreach var of varlist resilience_climate_* subj_res_score {
+		ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & MUN == `MUN', absorb(i.pair_rank) cluster(final_cluster)
+		outreg2 using "subjres_MUN.xls", append ctitle (total_`MUN')
+	}
 }
-foreach MUN of numlist 20313 50171 160670 190870 138060 {
-		ivreghdfe subj_res_score (registered_walang_gutom = treatment) if endline == 1 & MUN == `MUN' & any_climshock==1 , absorb(i.pair_rank) cluster(final_cluster)
-		outreg2 using "subjres_MUN.xls", append ctitle (shock_`MUN')
-}
+
+	foreach var of varlist resilience_climate_* subj_res_score {
+		ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 /*& MUN == `MUN'*/ , absorb(i.pair_rank) cluster(final_cluster)
+		outreg2 using "subjres_MUN.xls", append ctitle (tottotal_`var')
+	}
+
+*foreach MUN of numlist 20313 50171 160670 190870 138060 {
+	foreach var of varlist resilience_climate_* subj_res_score {
+		ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 /*& MUN == `MUN'*/ & any_climshock==0 , absorb(i.pair_rank) cluster(final_cluster)
+		outreg2 using "subjres_MUN.xls", append ctitle (totnoshock_`var')
+	}
+
+*foreach MUN of numlist 20313 50171 160670 190870 138060 {
+	foreach var of varlist resilience_climate_* subj_res_score {
+		ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 /*& MUN == `MUN'*/ & any_climshock==1 , absorb(i.pair_rank) cluster(final_cluster)
+		outreg2 using "subjres_MUN.xls", append ctitle (totshock_`var')
+	}
 
 
 * gender of meal planner (at endline)
@@ -318,7 +332,7 @@ foreach var of varlist $resil_var {
 	ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 , absorb(i.pair_rank) cluster(final_cluster)
 	outreg2 using "late_endline_resilience.xls", append ctitle (`var')			
 }
-foreach var of varlist $resil_var {
+foreach var of varlist any_hunger_3mo hunger_frequent FIES_8 fies total_food_1mo_php total_food_1mo_php_pc consumed_self_produced total2_food_1mo_php total2_food_1mo_php_pc tot_non_food_expenses tot_non_food_expenses_pc self_poverty cantril_ladder resilience_climate_* {
 	ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & any_climshock==0 , absorb(i.pair_rank) cluster(final_cluster)
 	outreg2 using "late_endline_resilience.xls", append ctitle (no_shock_`var')			
 }
