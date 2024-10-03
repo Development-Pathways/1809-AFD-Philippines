@@ -36,16 +36,21 @@ forval i = 1/28 {
 	rename Q16_A`i' Q16_`i'A
 }
 
-destring Q16_D_* Q16_B_* Q16_C_* , replace
+destring Q16_D_* Q16_C_* , replace
+
+
+
 
 *** shock between baseline and endline (november 23 - july 24)
 
+/*
 forval i = 1/28 {
 	clonevar recent_shock_`i' = shock_`i'
 	replace recent_shock_`i' = 0 if (Q16_B_`i'>=8 & Q16_B_`i'<=11)
 }
+*/
 
-egen n_shocks = rowtotal(Q16_A*)
+egen n_shocks = rowtotal(Q16_*A)
 gen any_shock = n_shocks>0 & !missing(n_shocks)
 
 * climate-related shocks (0-6): typhoon, flooding, landslide, drought, fire, crop pest/disease
@@ -53,7 +58,7 @@ gen any_shock = n_shocks>0 & !missing(n_shocks)
 egen n_climshock = rowtotal(shock_2 shock_3 shock_5 shock_6 shock_7 shock_8)
 gen any_climshock = n_climshock>0 & !missing(n_climshock)
 
-egen n_r_climshock = rowtotal(recent_shock_2 recent_shock_3 recent_shock_5 recent_shock_6 recent_shock_7 recent_shock_8)
+*egen n_r_climshock = rowtotal(recent_shock_2 recent_shock_3 recent_shock_5 recent_shock_6 recent_shock_7 recent_shock_8)
 gen any_r_climshock = n_climshock>0 & !missing(n_climshock)
 
 
@@ -143,6 +148,14 @@ forval i = 1/4 {
 	recode resilience_climate_`i' (1/2=1 "Will cope") (3=0 "DK") (4/5=-1 "Will not cope"), gen(subj_res3v_`i')
 	recode resilience_climate_`i' (1/2=1 "Confident will cope") (3/5=0 "Not confident"), gen(subj_res2v_`i')
 }
+
+egen subj_res_score = rowtotal(resilience_climate_*) 
+replace subj_res_score = . if subj_res_score==0
+
+gen subj_res_score_2 = (subj_res_score<=10)
+label define res_score 0 "Low resilience" 1 "High resilience"
+label values subj_res_score_2 res_score
+
 	
 * br hhid Q16_*D strategy* n_strat* if rel==1 & n_shocks>1
 

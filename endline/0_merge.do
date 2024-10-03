@@ -29,19 +29,37 @@ tostring INTNO, replace
 save "$processed/FSP Endline_ind.dta" , replace
 
 * HOUSEHOLD LEVEL
-import delimited "$ADB/FSP Endline 2024 Main Questionnaire_VALUE (21Aug24).csv", case(preserve) clear // INTNO 4,941
 
-*import delimited "$ADB/FSP Endline 2024 Main Questionnaire_LABEL (21Aug24).csv", case(preserve) clear 
+* extract shock months from label version 
+
+import delimited "$ADB/FSP Endline 2024 Main Questionnaire_LABEL (21Aug24).csv", case(preserve) clear 
 
 * identify and drop non-numeric
 list INTNO if missing(real(INTNO))
 drop if missing(real(INTNO)) 
 
-* from LABEL version
+keep INTNO Q16_B_*
+
+/* 
 
 forval n = 1/8 {
 	tab Q16_B_`n' MUN
 }
+
+*/
+
+tempfile Q16_B
+save `Q16_B', replace
+
+import delimited "$ADB/FSP Endline 2024 Main Questionnaire_VALUE (21Aug24).csv", case(preserve) clear // INTNO 4,941
+
+* identify and drop non-numeric
+list INTNO if missing(real(INTNO))
+drop if missing(real(INTNO)) 
+
+drop Q16_B*
+
+merge 1:1 INTNO using `Q16_B', nogenerate
 
 destring PROVINCE MUN, replace
 

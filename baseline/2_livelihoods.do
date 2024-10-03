@@ -90,11 +90,13 @@ assert check_A==1 if !missing(check_A)
 
 * main livelihood
 
-egen max = rowmax(s1A*)
+egen max = rowmax(HHTIncome CROPTOT1 LIVESTOCKTOT1 FISHINGTOT1 FOODSERVICETOT1 WHOLESALETOT1 MANUFACTURINGTOT1 TRANSPORTATIONTOT1 OTHERTOT1 OTHERPROG1 INCOMERECEIPTS1)
 gen main_livelihood = ""
 foreach activity in "HHTIncome" "CROPTOT1" "LIVESTOCKTOT1" "FISHINGTOT1" "FOODSERVICETOT1" "WHOLESALETOT1" "MANUFACTURINGTOT1" "TRANSPORTATIONTOT1" "OTHERTOT1" "OTHERPROG1" "INCOMERECEIPTS1" {
-	replace main_livelihood = "`activity'" if max==s1A_`activity'
+	replace main_livelihood = "`activity'" if max==`activity'
 }
+
+gen main_natural = (main_livelihood == "CROPTOT1" | main_livelihood == "LIVESTOCKTOT1" | main_livelihood == "FISHINGTOT1")
 
 egen HHI_income = rowtotal(s2A_*) // calculated manually, surely there's a stata command
 

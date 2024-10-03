@@ -60,8 +60,22 @@ ivreghdfe `var' (Dit_registered = Dit), absorb(i.hhid i.endline) cluster(final_c
 */
 
  ****
-
+xtset hhid round
+ ****
+ 
 cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Evaluation (Assignment 1)/Data/Tables/regressions"
+
+global index_comp hh_bop has_savings value_extra_asset FIES_8 share_food hh_network negative_strat_climate n_safetynet hh_healthins  health_access ///
+n_sources n_asset_types access_info good_debt no_negative_strat_climate crop_lives_fish hh_inclusion hh_socinsur hh_emprate ///
+exp_edu_pchild age_appr_edu_ratio 
+
+global other_outcomes any_debt bad_debt cantril_ladder resilience_climate_* any_hunger_3mo hunger_frequent fies ///
+total_food_1mo_php total_food_1mo_php_pc consumed_self_produced total2_food_1mo_php total2_food_1mo_php_pc tot_non_food_expenses tot_non_food_expenses_pc ///
+n_f_assets n_assets n_extra_assets n_asset_types ///
+n_jobs hh_farming /* jobs_pc */ 
+
+
+/*
 
 * endline cross-section (pair FE)
  
@@ -84,6 +98,8 @@ foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_i
 *	outreg2 using "did.xls", append ctitle (`var')			
 }
 
+*/
+
 * LATE endline
  
 foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp $other_outcomes locus_control_* { 
@@ -93,13 +109,15 @@ foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_i
 }
  
 * LATE panel
- 
+
+/* 
 	replace hunger= any_hunger_3mo if missing(hunger) 
 	recode hunger_freq (1/2=0) (3/4=1), gen(hunger_freq2)
 	replace hunger_frequent = hunger_freq2 if missing(hunger_frequent)
 	replace hunger_frequent = 0 if missing(hunger_frequent)
 	
  	ivreghdfe hunger_frequent (Dit_registered = Dit) if balance==1 , absorb(i.hhid i.endline) cluster(final_cluster)
+*/
 
 foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp any_debt bad_debt n_f_assets n_assets n_extra_assets n_asset_types n_jobs hh_farming { 
 	ivreghdfe `var' (Dit_registered = Dit) if balance==1 , absorb(i.hhid i.endline) cluster(final_cluster)
@@ -109,8 +127,9 @@ foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_i
 
 *  HETEROGENITY ANALYSIS
 
-* study site (tondo vs other)
+* study site 
 
+/*
 foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp $other_outcomes locus_control_* { 
 	reghdfe `var' treatment if endline == 1 & MUN==138060, absorb(i.pair_rank) vce(cluster pair_rank)
 	outreg2 using "itt_endline_by_site.xls", append ctitle (Tondo_`var')			
@@ -120,25 +139,158 @@ foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_i
 	reghdfe `var' treatment if endline == 1 & MUN!=138060, absorb(i.pair_rank) vce(cluster pair_rank)
 	outreg2 using "itt_endline_by_site.xls", append ctitle (Other_`var')			
 }
+*/
 
-* gender of recipient
+bysort MUN : su abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp if endline == 1
+
+foreach MUN of numlist /*20313 50171 160670 190870*/ 138060 {
+		foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 hh_bop has_savings value_extra_asset FIES_8 share_food hh_network negative_strat_climate n_safetynet hh_healthins  health_access n_sources n_asset_types access_info good_debt no_negative_strat_climate crop_lives_fish hh_inclusion hh_socinsur hh_emprate exp_edu_pchild age_appr_edu_ratio  { 
+		display "`MUN'" " " "`var'"
+		* ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & MUN == `MUN' , absorb(i.pair_rank) cluster(final_cluster)
+		ivreghdfe `var' (Dit_registered = Dit) if MUN == `MUN' , absorb(i.hhid i.endline) cluster(final_cluster)
+		outreg2 using "late_panel_byMUN.xls", append ctitle (`MUN'_`var')
+	}
+}
+
+/*
+                        1,634     20313  San Mariano
+                          662     50171  Garchitorena
+                        5,282    138060  Tondo
+                        1,384    160670  Dapa
+                          482    190870  Parang
+*/
 
 * household size
 
+su hhsize if round==0 , d
+gen temp = (hhsize>r(p50)) if round==0
+egen hhsize_2 = max(temp), by(hhid)
+drop temp
+label define hhsize_2 0 "Smaller (1-7)" 1 "Larger (8+)"
+label values hhsize_2 hhsize_2
+
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp any_debt bad_debt { 
+	*ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & hhsize_2 == 0 , absorb(i.pair_rank) cluster(final_cluster)
+	ivreghdfe `var' (Dit_registered = Dit) if hhsize_2 == 0 , absorb(i.hhid i.endline) cluster(final_cluster)
+	outreg2 using "late_panel_bysize.xls", append ctitle (small_`var')
+}
+
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp any_debt bad_debt { 
+	*ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & hhsize_2 == 1 , absorb(i.pair_rank) cluster(final_cluster)
+	ivreghdfe `var' (Dit_registered = Dit) if hhsize_2 == 1 , absorb(i.hhid i.endline) cluster(final_cluster)
+	outreg2 using "late_panel_bysize.xls", append ctitle (large_`var')			
+}
+
 * farming as main livelihood
 
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 hh_bop has_savings value_extra_asset FIES_8 share_food hh_network negative_strat_climate n_safetynet hh_healthins  health_access n_sources n_asset_types access_info good_debt no_negative_strat_climate hh_inclusion hh_socinsur hh_emprate exp_edu_pchild age_appr_edu_ratio any_debt bad_debt { 
+	* reghdfe `var' treatment if endline == 1 & hh_farming==1, absorb(i.pair_rank) vce(cluster pair_rank)
+	ivreghdfe `var' (Dit_registered = Dit) if hh_farming==0 , absorb(i.hhid i.endline) cluster(final_cluster)
+	outreg2 using "late_panel_farming.xls", append ctitle (no_`var')	
+}
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 hh_bop has_savings value_extra_asset FIES_8 share_food hh_network negative_strat_climate n_safetynet hh_healthins  health_access n_sources n_asset_types access_info good_debt no_negative_strat_climate hh_inclusion hh_socinsur hh_emprate exp_edu_pchild age_appr_edu_ratio any_debt bad_debt { 
+	ivreghdfe `var' (Dit_registered = Dit) if hh_farming==1 , absorb(i.hhid i.endline) cluster(final_cluster)
+	outreg2 using "late_panel_farming.xls", append ctitle (yes_`var')			
+}
+
+* share of food consumption 
+
+su share_food if round==0 , d
+gen temp = (share_food>r(p50)) if round==0
+egen share_food_2 = max(temp), by(hhid)
+label define share_food_2 0 "Below median" 1 "Above median"
+label values share_food_2 share_food_2
+
+foreach var of varlist /*abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 hh_bop has_savings value_extra_asset FIES_8 hh_network negative_strat_climate n_safetynet hh_healthins  health_access n_sources n_asset_types access_info good_debt no_negative_strat_climate crop_lives_fish hh_inclusion hh_socinsur hh_emprate exp_edu_pchild age_appr_edu_ratio any_debt bad_debt*/ share_food { 
+	*ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & share_food_2 == 0 , absorb(i.pair_rank) cluster(final_cluster)
+	ivreghdfe `var' (Dit_registered = Dit) if share_food_2 == 0 , absorb(i.hhid i.endline) cluster(final_cluster)
+	outreg2 using "late_panel_byfoodshare.xls", append ctitle (low_`var')
+}
+foreach var of varlist /*abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 hh_bop has_savings value_extra_asset FIES_8 hh_network negative_strat_climate n_safetynet hh_healthins  health_access n_sources n_asset_types access_info good_debt no_negative_strat_climate crop_lives_fish hh_inclusion hh_socinsur hh_emprate exp_edu_pchild age_appr_edu_ratio any_debt bad_debt*/ share_food { 
+	ivreghdfe `var' (Dit_registered = Dit) if share_food_2 == 1 , absorb(i.hhid i.endline) cluster(final_cluster)
+	outreg2 using "late_panel_byfoodshare.xls", append ctitle (high_`var')			
+}
+
+* shock before endline
+
+su abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp $other_outcomes locus_control_* if endline == 1 & any_climshock == 0
+
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 hh_bop has_savings value_extra_asset FIES_8 share_food hh_network  n_safetynet hh_healthins  health_access n_sources n_asset_types access_info good_debt crop_lives_fish hh_inclusion hh_socinsur hh_emprate exp_edu_pchild age_appr_edu_ratio any_debt bad_debt { 
+	*ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & any_climshock == 0 , absorb(i.pair_rank) cluster(final_cluster)
+	ivreghdfe `var' (Dit_registered = Dit) if any_climshock == 0 , absorb(i.hhid i.endline) cluster(final_cluster)
+	outreg2 using "late_panel_byshock.xls", append ctitle (noshock_`var')
+}
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 hh_bop has_savings value_extra_asset FIES_8 share_food hh_network  n_safetynet hh_healthins  health_access n_sources n_asset_types access_info good_debt crop_lives_fish hh_inclusion hh_socinsur hh_emprate exp_edu_pchild age_appr_edu_ratio any_debt bad_debt { 
+	*ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & any_climshock == 1 , absorb(i.pair_rank) cluster(final_cluster)
+	ivreghdfe `var' (Dit_registered = Dit) if any_climshock == 1 , absorb(i.hhid i.endline) cluster(final_cluster)
+	outreg2 using "late_panel_byshock.xls", append ctitle (shock_`var')			
+}
+
+* subjective resilience
+
 foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp $other_outcomes locus_control_* { 
-	reghdfe `var' treatment if endline == 1 & hh_farming==1, absorb(i.pair_rank) vce(cluster pair_rank)
-	outreg2 using "itt_endline_farmers.xls", append ctitle (`var')			
+	ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & subj_res_score_2 == 0 , absorb(i.pair_rank) cluster(final_cluster)
+	outreg2 using "late_endline_bysubjres.xls", append ctitle (low_`var')
+}
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp $other_outcomes locus_control_* { 
+	ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & subj_res_score_2 == 1 , absorb(i.pair_rank) cluster(final_cluster)
+	outreg2 using "late_endline_bysubjres.xls", append ctitle (high_`var')			
+}
+
+foreach MUN of numlist 20313 50171 160670 190870 138060 {
+		* ivreghdfe subj_res_score (registered_walang_gutom = treatment) if endline == 1 & MUN == `MUN' , absorb(i.pair_rank) cluster(final_cluster)
+		ivreghdfe subj_res_score (registered_walang_gutom = treatment) if endline == 1 & MUN == `MUN' & any_climshock==0 , absorb(i.pair_rank) cluster(final_cluster)
+		outreg2 using "subjres_MUN.xls", append ctitle (noshock_`MUN')
+}
+foreach MUN of numlist 20313 50171 160670 190870 138060 {
+		ivreghdfe subj_res_score (registered_walang_gutom = treatment) if endline == 1 & MUN == `MUN' & any_climshock==1 , absorb(i.pair_rank) cluster(final_cluster)
+		outreg2 using "subjres_MUN.xls", append ctitle (shock_`MUN')
+}
+
+
+* gender of meal planner (at endline)
+
+egen meal_planner_g = max(meal_planner_gender), by(hhid)
+
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp any_debt bad_debt { 
+	*ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & meal_planner_gender == 1 , absorb(i.pair_rank) cluster(final_cluster)
+	ivreghdfe `var' (Dit_registered = Dit) if meal_planner_g == 1 , absorb(i.hhid i.endline) cluster(final_cluster)
+	outreg2 using "late_panel_bygender.xls", append ctitle (male_`var')
+}
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp any_debt bad_debt { 
+	*ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & meal_planner_gender == 2 , absorb(i.pair_rank) cluster(final_cluster)
+	ivreghdfe `var' (Dit_registered = Dit) if meal_planner_g == 2 , absorb(i.hhid i.endline) cluster(final_cluster)
+	outreg2 using "late_panel_bygender.xls", append ctitle (female_`var')			
+}
+
+
+* presence of fridge (at baseline)
+
+gen fridge = (Q13_3A7==1|Q13_3A7==2) if round==0 
+
+egen fridge_2 = max(fridge), by(hhid)
+
+replace fridge = 1 if (Q13_3_A_7==1|Q13_3_A_7==2) & round==1
+replace fridge = 0 if (Q13_3_A_7==0) & round==1
+xttrans fridge
+
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp any_debt bad_debt { 
+	ivreghdfe `var' (Dit_registered = Dit) if fridge_2 == 0 , absorb(i.hhid i.endline) cluster(final_cluster)
+	outreg2 using "late_panel_bfridge.xls", append ctitle (no_`var')
+}
+foreach var of varlist abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 $index_comp any_debt bad_debt { 
+	ivreghdfe `var' (Dit_registered = Dit) if fridge_2 == 1 , absorb(i.hhid i.endline) cluster(final_cluster)
+	outreg2 using "late_panel_bfridge.xls", append ctitle (yes_`var')			
 }
 
 
 * RESILIENCE ANALYSIS
 
-reghdfe negative_strat_climate treatment if endline==1 & MUN==138060 & any_climshock==1, absorb(i.pair_rank) vce(cluster pair_rank)
-	outreg2 using "itt_endline_tondo.xls"		
-reghdfe negative_strat_climate##treatment if endline==1 & MUN==138060 & any_climshock==1, absorb(i.pair_rank) vce(cluster pair_rank)
-	outreg2 using "itt_endline_tondo.xls"			
+ivreghdfe negative_strat_climate (registered_walang_gutom = treatment) if endline==1 /*& MUN==138060*/ & any_climshock==1, absorb(i.pair_rank) cluster(pair_rank)
+	outreg2 using "late_endline_byshock.xls", append ctitle (negative_strat_climate)
+	
+* reghdfe negative_strat_climate##treatment if endline==1 /*& MUN==138060*/ & any_climshock==1, absorb(i.pair_rank) vce(cluster pair_rank)
+*	outreg2 using "itt_endline_tondo.xls"			
 
 	
 reghdfe total_food_1mo_php any_climshock##treatment if endline==1 & MUN==138060, absorb(i.pair_rank) vce(cluster pair_rank)
@@ -147,6 +299,33 @@ reghdfe total_food_1mo_php any_climshock##treatment if endline==1 & MUN==138060,
 	* tondo first
 
 reghdfe fies any_climshock##treatment if endline==1 & MUN==138060, absorb(i.pair_rank) vce(cluster pair_rank)
+
+***
+ 
+	replace hunger= any_hunger_3mo if missing(hunger) 
+	recode hunger_freq (1/2=0) (3/4=1), gen(hunger_freq2)
+	replace hunger_frequent = hunger_freq2 if missing(hunger_frequent)
+	replace hunger_frequent = 0 if missing(hunger_frequent)
+ 
+ 
+ 
+global resil_var any_hunger_3mo hunger_frequent FIES_8 fies total_food_1mo_php total_food_1mo_php_pc consumed_self_produced total2_food_1mo_php total2_food_1mo_php_pc tot_non_food_expenses tot_non_food_expenses_pc self_poverty cantril_ladder resilience_climate_* negative_strat_climate cl_strategy2 cl_strategy4 cl_strategy9 cl_strategy10 cl_strategy11 cl_strategy14 cl_strategy15 cl_strategy16 loss_*_cl 
+
+su $resil_var if endline==1 
+
+
+foreach var of varlist $resil_var {
+	ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 , absorb(i.pair_rank) cluster(final_cluster)
+	outreg2 using "late_endline_resilience.xls", append ctitle (`var')			
+}
+foreach var of varlist $resil_var {
+	ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & any_climshock==0 , absorb(i.pair_rank) cluster(final_cluster)
+	outreg2 using "late_endline_resilience.xls", append ctitle (no_shock_`var')			
+}
+foreach var of varlist $resil_var {
+	ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & any_climshock==1 , absorb(i.pair_rank) cluster(final_cluster)
+	outreg2 using "late_endline_resilience.xls", append ctitle (shock_`var')			
+}
 	
 	
  

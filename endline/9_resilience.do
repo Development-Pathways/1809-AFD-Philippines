@@ -32,6 +32,10 @@ append using "Processed/FSP Baseline Processed_HH.dta", force
 
 recode endline (.=0 "Baseline") (1=1 "Endline"), gen(round) 
 
+
+* balanced panel 
+duplicates tag hhid, gen(balance)
+
 /*
 tab treatment round, miss
  
@@ -46,7 +50,8 @@ tab treatment round, miss
 * tables folder
 cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Evaluation (Assignment 1)/Data/Tables/endline"
 
-drop abs_index* adapt_index* transf_index*
+drop abs_index* adapt_index* transf_index* control
+gen  control = 1-treatment 
 	
 ************************
 * Absorptive resilence *
@@ -56,9 +61,7 @@ gen refgroup = (round==0 & treatment==0)
 
 * swindex	hh_bop has_savings value_extra_asset FIES_8 share_food hh_network negative_strat_climate n_safetynet hh_healthins  health_access , gen(abs_index_A) displayw normby(refgroup) flip(FIES_8 share_food negative_strat_climate )
 
-	duplicates tag hhid, gen(balance)
-
-	swindex	hh_bop has_savings value_extra_asset FIES_8 share_food hh_network negative_strat_climate n_safetynet hh_healthins  health_access if balance==1, gen(abs_index_A) displayw normby(refgroup) flip(FIES_8 share_food negative_strat_climate )
+swindex	hh_bop has_savings value_extra_asset FIES_8 share_food hh_network negative_strat_climate n_safetynet hh_healthins  health_access if balance==1, gen(abs_index_A) displayw normby(refgroup) flip(FIES_8 share_food negative_strat_climate )
 
 
 qui pca hh_bop has_savings value_extra_asset FIES_8 share_food hh_network negative_strat_climate n_safetynet hh_healthins  health_access if balance==1 // if treatment==0 & round==0 
@@ -127,10 +130,10 @@ cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Eval
 * treatment assignment (intention to treat)
 *iebaltab $index_comp abs_index* adapt_index* transf_index* $other_outcomes if round==1 & balance==1 , grpvar(treatment) vce(cluster final_cluster) /*balmiss(groupmean)*/ total replace save("treat_vs_control.xlsx")
 
-iebaltab $index_comp abs_index* adapt_index* transf_index* $other_outcomes if round==1 & balance==1, grpvar(treatment) vce(cluster pair_rank) /*balmiss(groupmean)*/ total replace save("treat_vs_control.xlsx")
+iebaltab $index_comp abs_index* adapt_index* transf_index* $other_outcomes if round==1 & balance==1, grpvar(control) vce(cluster pair_rank) /*balmiss(groupmean)*/ total replace save("treat_vs_control.xlsx")
 
 * shock only
-iebaltab $index_comp abs_index* adapt_index* transf_index* $other_outcomes if round==1 & balance==1 & any_climshock==1 , grpvar(treatment) vce(cluster pair_rank) /*balmiss(groupmean)*/ total replace save("treat_vs_control_shock.xlsx")
+iebaltab $index_comp abs_index* adapt_index* transf_index* $other_outcomes if round==1 & balance==1 & any_climshock==1 , grpvar(control) vce(cluster pair_rank) /*balmiss(groupmean)*/ total replace save("treat_vs_control_shock.xlsx")
 
 * registration (MIS)
 iebaltab $index_comp abs_index* adapt_index* transf_index* $other_outcomes if round==1 & balance==1, grpvar(registered_walang_gutom) vce(cluster pair_rank) /*balmiss(groupmean)*/ total replace save("registered_vs_unregistered.xlsx")
