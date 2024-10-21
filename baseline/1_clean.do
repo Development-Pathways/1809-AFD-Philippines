@@ -41,6 +41,11 @@ recode Q2I (5/max = .), gen(marital)
 recode Q2J (12=1 "Tagalog") (4=2 "Ilocano") (1=3 "Bicolano") (6=4 "Cebuano") (2 3 5 7/11 13/15 88 = 5 "Other") (89/max = .), gen(ethnicity)
 
 
+* gender of meal planner
+
+gen meal_planner_gender0 = Q2D if pid==Q2L
+egen meal_planner_gender = max(meal_planner_gender0), by(hhid)
+
 * education
 recode Q2H (0/1 = 0 "No grade completed") (2/6 = 1 "Incomplete Primary") (7 = 3 "Primary") (8/10 = 4 "Incomplete Junior High") (11 = 5 "Junior High") (12 = 6 "1st year Senior High") (13 = 7 "Senior High") (14/17 = 8 "Tertiary") (18/max =.) , gen(edu)
 

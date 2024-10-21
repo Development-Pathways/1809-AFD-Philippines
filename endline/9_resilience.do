@@ -84,19 +84,19 @@ asdoc pwcorr hh_bop has_savings value_extra_asset FIES_8 share_food hh_network n
 * Adaptive resilence *
 **********************
 
-swindex	n_sources n_asset_types access_info good_debt no_negative_strat_climate crop_lives_fish hh_inclusion hh_socinsur hh_emprate if balance==1 , gen(adapt_index_A) displayw normby(refgroup) flip(crop_lives_fish )
+swindex	n_sources n_asset_types /*access_info*/ good_debt no_negative_strat_climate crop_lives_fish hh_inclusion /*hh_socinsur*/ hh_emprate if balance==1 , gen(adapt_index_A) displayw normby(refgroup) flip(crop_lives_fish )
 
-qui pca n_sources n_asset_types access_info good_debt no_negative_strat_climate crop_lives_fish hh_inclusion hh_socinsur hh_emprate if balance==1 // if treatment==0 & round==0 
+qui pca n_sources n_asset_types good_debt no_negative_strat_climate crop_lives_fish hh_inclusion hh_emprate if balance==1 // if treatment==0 & round==0 
 qui predict adapt_index_pca_A, score
 
-swindex	n_sources n_asset_types access_info good_debt no_negative_strat_climate if balance==1, gen(adapt_index_B) displayw normby(refgroup)
+swindex	n_sources n_asset_types good_debt no_negative_strat_climate if balance==1, gen(adapt_index_B) displayw normby(refgroup)
 
-qui pca n_sources n_asset_types access_info good_debt no_negative_strat_climate if balance==1 // if treatment==0 & round==0 
+qui pca n_sources n_asset_types good_debt no_negative_strat_climate if balance==1 // if treatment==0 & round==0 
 qui predict adapt_index_pca_B, score
 
-swindex	n_sources n_asset_types access_info good_debt if balance==1 , gen(adapt_index_C) displayw normby(refgroup)
+swindex	n_sources n_asset_types good_debt if balance==1 , gen(adapt_index_C) displayw normby(refgroup)
 
-qui pca n_sources n_asset_types access_info good_debt if balance==1 // if treatment==0 & round==0 
+qui pca n_sources n_asset_types good_debt if balance==1 // if treatment==0 & round==0 
 qui predict adapt_index_pca_C, score
 	
 *correlation matrix	
@@ -113,6 +113,17 @@ qui predict transf_index_pca_2, score
 
 *correlation matrix	
 asdoc pwcorr exp_edu_pchild age_appr_edu_ratio if balance==1 , bonferroni star(all) save(transf_corr_2.doc) replace
+
+*****************************
+* Normalise indices *
+*****************************
+
+foreach var of varlist abs_index* adapt_index* transf_index* {
+	qui su `var'
+	gen `var'_01 = (`var' - r(min))/(r(max)-r(min))
+}
+
+mean abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 if refgroup==1, over(MUN)
 
 *** treatment vs control  ***
 

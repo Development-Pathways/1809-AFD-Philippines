@@ -39,24 +39,40 @@ egen food_consumption = rowtotal(TOTALBREADANDCEREALS TOTALMEAT TOTALFISHANDSEAF
 
 assert round(food_consumption) == round(TOTALCONSUMPTION) 
 
-* convert from "monthly average over past 6 months" to "6 months"
+replace food_consumption = food_consumption/6 // monthly 
+
+/* convert from "monthly average over past 6 months" to "6 months"
 forvalues i = 1/16 {				// item 17 = other is missing
  replace Q9_2_`i' = Q9_2_`i'* 6 
 }
+*/
 
-egen nonfood_consumption = rowtotal(Q9_2_*) 
+egen nonfood_consumption = rowtotal(Q9_2_*) // monthly
 
 egen neces_consumption = rowtotal(food_consumption Q9_2_1 Q9_2_2 Q9_2_3 Q9_2_4) // schooling, health, utilities, rent
 
-egen total_consumption = rowtotal(food_consumption nonfood_consumption)
+egen total_consumption = rowtotal(food_consumption nonfood_consumption) // monthly 
 
 gen share_food = food_consumption/total_consumption
 gen share_necess = neces_consumption/total_consumption
 
+* check outliers
+* graph box food_consumption , over(MUN)
+* graph box nonfood_consumption , over(MUN)
 
-foreach var of varlist food_consumption total_consumption {
+* winsorise 
+winsor2 food_consumption, cuts(0 99)
+drop food_consumption
+rename food_consumption_w food_consumption
+
+foreach var of varlist food_consumption nonfood_consumption total_consumption {
 	gen `var'_pc = `var'/hhsize
 }
+
+clonevar total_food_1mo_php = food_consumption
+clonevar total_food_1mo_php_pc = food_consumption_pc
+clonevar tot_non_food_expenses = nonfood_consumption
+clonevar tot_non_food_expenses_pc = nonfood_consumption_pc
 
 clonevar exp_edu = Q9_2_1 
 

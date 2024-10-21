@@ -38,8 +38,12 @@ forval i = 1/28 {
 
 destring Q16_D_* Q16_C_* , replace
 
+* month of last shock 
 
-
+forval i = 1/28 {
+	gen month_`i' = monthly(Q16_B_`i', "MY")
+}
+format month_* %tm
 
 *** shock between baseline and endline (november 23 - july 24)
 
@@ -50,6 +54,13 @@ forval i = 1/28 {
 }
 */
 
+** shock in the previous 6 months (since Feb 2024)
+
+forval i = 1/28 {
+	clonevar recent_shock_`i' = shock_`i'
+	replace recent_shock_`i' = 0 if month_`i'<tm(2024m2) 
+}
+
 egen n_shocks = rowtotal(Q16_*A)
 gen any_shock = n_shocks>0 & !missing(n_shocks)
 
@@ -58,9 +69,9 @@ gen any_shock = n_shocks>0 & !missing(n_shocks)
 egen n_climshock = rowtotal(shock_2 shock_3 shock_5 shock_6 shock_7 shock_8)
 gen any_climshock = n_climshock>0 & !missing(n_climshock)
 
-*egen n_r_climshock = rowtotal(recent_shock_2 recent_shock_3 recent_shock_5 recent_shock_6 recent_shock_7 recent_shock_8)
-gen any_r_climshock = n_climshock>0 & !missing(n_climshock)
+egen n_r_climshock = rowtotal(recent_shock_2 recent_shock_3 recent_shock_5 recent_shock_6 recent_shock_7 recent_shock_8)
 
+gen any_r_climshock = n_r_climshock>0 & !missing(n_r_climshock)
 
 * coping strategies
 

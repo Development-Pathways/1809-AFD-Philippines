@@ -10,15 +10,27 @@ use "Processed/FSP Endline Processed_HH.dta", clear // household
 
 table () (round), statistic(mean $index_comp )
 
-*4p
+* progs
 
-tab1 prog_8 health_subsidy_8
+su n_safetynet hh_healthins hh_inclusion hh_socinsur
 
-gen pppp = prog_8 
-replace pppp = health_subsidy_8 if round == 1
+forval n = 1/8 {
+	replace prog_`n' = health_subsidy_`n' if round==1
+}
+replace prog_9 = health_subsidy_99 if round==1
+replace prog_10 = other_subsidy_1 if round==1
+replace prog_11 = other_subsidy_2 if round==1
+replace prog_12 = other_subsidy_3 if round==1
+replace prog_13 = other_subsidy_4 if round==1
+replace prog_14 = other_subsidy_5 if round==1
+replace prog_15 = other_subsidy_6 if round==1
+replace prog_16 = other_subsidy_7 if round==1
+replace prog_17 = other_subsidy_8 if round==1
 
-mean pppp, over(round)
-reg pppp treatment if round==1
+mean prog_*, over(round)
+
+reg prog_8 treatment if round==1
+
 
 *** shocks *** 
 
@@ -96,13 +108,15 @@ tabstat abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_in
 reg abs_index_A i.MUN if round==0
 mvtest means abs_index_A, by(MUN) 
 
-table (MUN) (round), statistic(mean abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2) nototals
+table (MUN) (round), statistic(mean abs_index_A adapt_index_A transf_index_2) nototals
 
 use "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Evaluation (Assignment 1)/Data/Processed/FSP Endline Processed_HH.dta", clear
 
 keep if round==0 
 
-tabstat abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2, by(hhsize_2) statistics(mean sd) 
+tabstat abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 if refgroup==1 , by(MUN) statistics(mean sd) 
+
+tabstat abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 if refgroup==1, by(hhsize_2) statistics(mean sd) 
 
 tabstat abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2, by(main_natural) statistics(mean sd) // 8% main_natural=1
 
@@ -139,3 +153,11 @@ cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Eval
 
 asdoc pwcorr abs_index_A adapt_index_A transf_index_2 $non_index_vars if round==0 , bonferroni star(all) save(other_corr.doc) replace
 
+foreach var of varlist hhsize_2 hh_farming fridge_2 share_food_2  {
+	tab `var' MUN if round==0, col nofreq
+}
+foreach var of varlist meal_planner_gender any_climshock subj_res_score_2 {
+	tab `var' MUN if round==1, col nofreq
+}
+	* correlation between resilience indices and subjective resilience
+asdoc pwcorr abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 resilience_climate_* if balance==1 , bonferroni star(all) save(resilience_correlation.doc) replace
