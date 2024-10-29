@@ -34,13 +34,16 @@ forvalues i = 1/5 {
 	replace q13_2_a`i' = . if (q13_2_a`i'== 8 | q13_2_a`i'== 98 | q13_2_a`i'== 99)
 	replace q13_2_c`i' = . if q13_2_c`i'== 999998 | q13_2_c`i'== 999999
 	
+	winsor2 q13_2_a`i', cuts(0 99)
+	
 	*average price for each asset (hh level)
-	gen price_f`i' = q13_2_c`i' / q13_2_a`i' // price/number
-	
+	gen price_f`i' = q13_2_c`i' / q13_2_a`i'_w // price/number
+*	replace price_f`i' = 0 if q13_2_a`i'==0
+	winsor2 price_f`i', cuts(0 99)
+
 	*average price for each asset (municipality level)
-	egen avg_price_f`i' = mean(price_f`i'), by(MUN)
-	
-	}
+	egen avg_price_f`i' = mean(price_f`i'_w), by(MUN)
+}
 
 egen n_f_assets = rowtotal(q13_2_a*) 
 
@@ -77,11 +80,15 @@ forvalues i = 2/12 {
     
 	replace Q13_3C`i' = . if Q13_3C`i' == 999998
 	
-	*average price for each asset (hh level)
-	gen price_`i' = Q13_3C`i' / Q13_3A`i' // price/number
+	winsor2 Q13_3A`i', cuts(0 99)
 	
-		*average price for each asset (municipality level)
-		egen avg_price_`i' = mean(price_`i'), by(MUN)
+	*average price for each asset (hh level)
+	gen price_`i' = Q13_3C`i' / Q13_3A`i'_w // price/number
+*	replace price_`i' = 0 if Q13_3A`i'==0
+	winsor2 price_`i', cuts(0 99)
+
+	*average price for each asset (municipality level)
+	egen avg_price_`i' = mean(price_`i'_w), by(MUN)
 		
 	* value using average price
 	gen value_`i' = Q13_3A`i' * avg_price_`i'
@@ -104,14 +111,14 @@ forvalues i = 2/12 {
 				
 	*Liquid assets - ownership of excess (>1) assets weighted by relative asset value
 	
-	gen extra_asset_`i' = Q13_3A`i'-1
+	gen extra_asset_`i' = Q13_3A`i'_w-1
 	replace extra_asset_`i' = 0 if extra_asset_`i'<0
 	
 	gen weighted_extra`i' = extra_asset_`i' * wg_asset_`i'
 
 	gen value_e`i' = extra_asset_`i' * avg_price_`i'
 }
-
+ 
 egen n_extra_assets = rowtotal(extra_asset_*) 
 
 egen value_asset = rowtotal(value_2-value_12)
@@ -165,12 +172,6 @@ pca agri_land_sqm resid_land_sqm q13_2_a* n_shops_owned Q13_3A*
 predict assetindex_pca
 
 hist assetindex_pca
-
-// swindex
-
-swindex agri_land_sqm resid_land_sqm q13_2_a* n_shops_owned Q13_3A* , gen (asset_swindex) displayw
-
-hist asset_swindex
 
 drop wg* weighted* *price*
 

@@ -74,7 +74,10 @@ clonevar total_food_1mo_php_pc = food_consumption_pc
 clonevar tot_non_food_expenses = nonfood_consumption
 clonevar tot_non_food_expenses_pc = nonfood_consumption_pc
 
-clonevar exp_edu = Q9_2_1 
+
+winsor2 Q9_2_1, cuts(0 99)
+
+clonevar exp_edu = Q9_2_1_w
 
 gen exp_edu_pchild = exp_edu/n_school_age
 

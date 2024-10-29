@@ -108,13 +108,18 @@ tabstat abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_in
 reg abs_index_A i.MUN if round==0
 mvtest means abs_index_A, by(MUN) 
 
-table (MUN) (round), statistic(mean abs_index_A adapt_index_A transf_index_2) nototals
+table (MUN) (round), statistic(mean abs_index_A_01  adapt_index_A_01 transf_index_2_01) nototals
+
+table (MUN) (hhsize_2) if refgroup==1 , statistic(mean abs_index_A_01  adapt_index_A_01 transf_index_2_01) nototals
 
 use "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Evaluation (Assignment 1)/Data/Processed/FSP Endline Processed_HH.dta", clear
 
 keep if round==0 
 
-tabstat abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 if refgroup==1 , by(MUN) statistics(mean sd) 
+tabstat abs_index_A_01 abs_index_B_01 abs_index_C_01 adapt_index_A_01 adapt_index_B_01 adapt_index_C_01 transf_index_2_01 if refgroup==1 , by(MUN) statistics(mean) 
+
+tabstat abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 if refgroup==1 , by(MUN) statistics(mean) format(%9.3f)
+tabstat abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 if refgroup==1 & hhsize_2==1, by(MUN) statistics(mean) format(%9.3f)
 
 tabstat abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 if refgroup==1, by(hhsize_2) statistics(mean sd) 
 
@@ -145,7 +150,7 @@ table () (MUN low_abs_A) if round==0, statistic(mean hhsize sex n_child05 n_scho
 
 table () (MUN low_adapt_A) if round==0, statistic(mean hhsize sex n_child05 n_school_age hh_maxedu hh_depratio hh_n_jobs any_debt $index_comp) nototals
 
-table () (MUN low_transf_A) if round==0, statistic(mean  $index_comp) nototals
+table () (MUN low_transf_A) if round==0, statistic(mean  $index_comp ) nototals
 
 global non_index_vars hhsize sex n_child05 n_school_age hh_maxedu hh_depratio hh_n_jobs hh_farming share_food_2 any_debt any_climshock /*subj_res_score_2*/ fridge_2 
 
@@ -153,11 +158,30 @@ cd "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Eval
 
 asdoc pwcorr abs_index_A adapt_index_A transf_index_2 $non_index_vars if round==0 , bonferroni star(all) save(other_corr.doc) replace
 
-foreach var of varlist hhsize_2 hh_farming fridge_2 share_food_2  {
-	tab `var' MUN if round==0, col nofreq
+table () (MUN) if round==0, statistic(prop hhsize_2 hh_farm_base fridge_2 share_food_2 income_2)
+table () (MUN) if round==1, statistic(prop meal_planner_g any_climshock_end subj_res_score_2)
+
+foreach var of varlist hhsize_2 hh_farm_base fridge_2 share_food_2 income_2 meal_planner_g {
+	tab `var' MUN if round==0, row nofreq
 }
-foreach var of varlist meal_planner_gender any_climshock subj_res_score_2 {
-	tab `var' MUN if round==1, col nofreq
+foreach var of varlist any_climshock_end subj_res_score_2 {
+	tab `var' MUN if round==1, row nofreq
 }
-	* correlation between resilience indices and subjective resilience
-asdoc pwcorr abs_index_A abs_index_B abs_index_C adapt_index_A adapt_index_B adapt_index_C transf_index_2 resilience_climate_* if balance==1 , bonferroni star(all) save(resilience_correlation.doc) replace
+
+* correlation between resilience indices and subjective resilience
+
+/*
+foreach var of varlist abs_index_A_01  adapt_index_A_01 transf_index_2_01 {
+	pwcorr `var' resilience_climate_* subj_res_score, star(0.1) bonferroni
+}
+*/
+
+foreach MUN of numlist 20313 50171 138060 160670 190870 {
+	asdoc pwcorr abs_index_A  adapt_index_A transf_index_2 resilience_climate_* subj_res_score if MUN==`MUN' , bonferroni star(all) save(resilience_corr_`MUN'.doc) replace
+}
+	asdoc pwcorr abs_index_A  adapt_index_A transf_index_2 resilience_climate_* subj_res_score, bonferroni star(all) save(resilience_corr.doc) replace
+
+table () (MUN), statistic(mean subj_res2v_*) nototals
+mean subj_res2v_*
+
+table () (round), statistic(mean $index ) nototals

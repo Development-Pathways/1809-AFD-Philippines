@@ -100,7 +100,35 @@ egen n_neg_strat = rowtotal(n_strat2 n_strat4 n_strat9 n_strat10 n_strat11 n_str
 		egen cl_strategy`i' = rowmax(shock2strat`i' shock3strat`i' shock5strat`i' shock6strat`i' shock7strat`i' shock8strat`i')
 	}
 
-	egen negative_strat_climate = rowmax(cl_strategy2 cl_strategy4 cl_strategy9 cl_strategy10 cl_strategy11 cl_strategy14 cl_strategy15 cl_strategy16 cl_strategy17) if any_climshock==1	
+	egen negative_strat_climate = rowmax(cl_strategy2 cl_strategy4 cl_strategy9 cl_strategy10 cl_strategy11 cl_strategy14 cl_strategy15 cl_strategy16 cl_strategy17) if any_r_climshock==1	
+	
+* negative strategies used in the past 6 months
+
+/*
+br shock_2 month_2 Q16_D_2	/// 
+shock_3 month_3 Q16_D_3		///
+shock_5 month_5 Q16_D_5		///
+shock_6 month_6 Q16_D_6		///
+shock_7 month_7 Q16_D_7		///
+shock_8 month_8 Q16_D_8 if any_climshock==1 
+*/
+
+foreach n of numlist 2 4 9 10 11 14 15 16 17 {
+	gen Rcl_strategy`n' =	(Q16_D_2==`n' & month_2<tm(2024m2)) | ///
+							(Q16_D_3==`n' & month_3<tm(2024m2)) | ///
+							(Q16_D_5==`n' & month_5<tm(2024m2)) | ///
+							(Q16_D_6==`n' & month_6<tm(2024m2)) | ///
+							(Q16_D_7==`n' & month_7<tm(2024m2)) | ///
+							(Q16_D_8==`n' & month_8<tm(2024m2))
+}
+	egen Rnegative_strat_climate = rowmax(Rcl_strategy2 Rcl_strategy4 Rcl_strategy9 Rcl_strategy10 Rcl_strategy11 Rcl_strategy14 Rcl_strategy15 Rcl_strategy16 Rcl_strategy17) if any_climshock==1	
+
+	tab Q16_D_2 if MUN==138060 & month_2==tm(2024m7) // typhoon strategies in tondo if month of typhoon was july
+	gen strat_gaemi = Q16_D_2 if MUN==138060 & month_2==tm(2024m7)
+	gen negative_strat_gaemi =	Q16_D_2==2 | Q16_D_2==4  | Q16_D_2==9  | ///
+								Q16_D_2==10  | Q16_D_2==11  | Q16_D_2==14 | ///
+								Q16_D_2==15  | Q16_D_2==16  | Q16_D_2==17 if MUN==138060 & month_2==tm(2024m7) 
+	
 	
 	
 * outcome of the shock 

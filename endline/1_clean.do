@@ -10,7 +10,8 @@ use "Processed/FSP Endline Merged.dta", clear
 
 * current household 
 
-keep if Q2A_Update==1 // "Current HH member" // (82%)
+rename Q2A_Update current_member
+* keep if Q2A_Update==1 // "Current HH member" // (82%) keep non-household members 
 
 * ID
 

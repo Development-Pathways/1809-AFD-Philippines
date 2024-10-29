@@ -37,8 +37,11 @@ gen share_necess = neces_consumption/total_consumption
 
 *
 
-clonevar exp_edu = expenses_1 
+winsor2 expenses_1 , cuts(0 99)
+
+clonevar exp_edu = expenses_1_w
 
 gen exp_edu_pchild = exp_edu/n_school_age
+
 
 save "Processed/FSP Endline Processed.dta", replace

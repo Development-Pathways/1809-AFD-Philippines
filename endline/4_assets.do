@@ -35,11 +35,14 @@ forvalues i = 1/5 {
 	replace Q13_2_A_`i' = . if Q13_2_A_`i'== 99
 	replace Q13_2_C_`i' = . if Q13_2_C_`i'>= 999998 
 	
-	*average price for each asset (hh level)
-	gen price_f`i' = Q13_2_C_`i' / Q13_2_A_`i' // price/number
+	winsor2 Q13_2_A_`i', cuts(0 99)
 	
+	*average price for each asset (hh level)
+	gen price_f`i' = Q13_2_C_`i' / Q13_2_A_`i'_w // price/number
+	winsor2 price_f`i', cuts(0 99)
+
 	*average price for each asset (municipality level)
-	egen avg_price_f`i' = mean(price_f`i'), by(MUN)
+	egen avg_price_f`i' = mean(price_f`i'_w), by(MUN)
 	
 	* value of assets
 	gen value_f`i' = avg_price_f`i' * Q13_2_A_`i'
@@ -66,11 +69,14 @@ forvalues i = 2/12 {
     
 	replace Q13_3_C_`i' = . if Q13_3_C_`i' >= 999998
 	
-	*average price for each asset (hh level)
-	gen price_`i' = Q13_3_C_`i' / Q13_3_A_`i' // price/number
+	winsor2 Q13_3_A_`i', cuts(0 99)
 	
+	*average price for each asset (hh level)
+	gen price_`i' = Q13_3_C_`i' / Q13_3_A_`i'_w // price/number
+	winsor2 price_`i', cuts(0 99)
+
 	*average price for each asset (municipality level)
-	egen avg_price_`i' = mean(price_`i'), by(MUN)
+	egen avg_price_`i' = mean(price_`i'_w), by(MUN)
 		
 	* value using average price
 	gen value_`i' = Q13_3_A_`i' * avg_price_`i'
@@ -81,7 +87,7 @@ forvalues i = 2/12 {
 	
 	*Liquid assets - ownership of excess (>1) assets weighted by relative asset value
 	
-	gen extra_asset_`i' = Q13_3_A_`i'-1
+	gen extra_asset_`i' = Q13_3_A_`i'_w-1
 	replace extra_asset_`i' = 0 if extra_asset_`i'<0
 	
 	gen value_e`i' = extra_asset_`i' * avg_price_`i'

@@ -332,7 +332,7 @@ graph hbox n_safetynet , over(MUN)
 recode n_sources (6/max = 6 "6 or more"), gen (n_sources_bin)
 tab n_sources_bin MUN, col nofreq
 
-mean any_climshock //, over(MUN)
+mean any_climshock Q16_2A Q16_3A Q16_6A Q16_7A Q16_8A //, over(MUN)
 
 mean crop livestock fishing foodservice wholesale manufacturing trasportation other_activ other_sources //, over (MUN)
 
@@ -340,4 +340,7 @@ tab main_livelihood MUN, col nofreq
 
 tabstat hh_farming hh_foodservice hh_wholesale hh_manufacturing hh_transportation hh_other_activ, statistics( mean ) by(MUN)
 
+graph box value_extra_asset if round==0, over(MUN)
 
+table () (MUN), statistic(mean $index ) nototals
+mean $index
