@@ -18,4 +18,4 @@ graph box total2_food_1mo_php_pc , over(MUN)
 
 bysort round: su health_subsidy_* other_subsidy_*
 
- 
+ ciao
