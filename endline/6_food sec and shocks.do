@@ -198,4 +198,4 @@ label values subj_res_score_2 res_score
 	
 * br hhid Q16_*D strategy* n_strat* if rel==1 & n_shocks>1
 
-save "Processed/FSP Endline Processed.dta", replace
+save "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Impact Evaluation (Assignment 1)/Data/Processed/FSP Endline Processed.dta", replace

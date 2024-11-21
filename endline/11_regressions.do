@@ -94,6 +94,13 @@ foreach var of varlist $index $other loss_*_cl abs_index_pca_A abs_index_pca_B a
 	outreg2 using "late_panel.xls", append ctitle (`var')			
 }
 
+foreach var of varlist $index $other loss_*_cl abs_index_pca_A abs_index_pca_B abs_index_pca_C adapt_index_pca_A adapt_index_pca_B adapt_index_pca_C transf_index_pca_2 { 
+	ivreghdfe `var' (Dit_registered = Dit), absorb(i.INTNO i.endline) cluster(pair_rank)
+	outreg2 using "pair_panel.xls", append ctitle (`var')			
+}
+
+mean $index $other loss_*_cl abs_index_pca_A abs_index_pca_B abs_index_pca_C adapt_index_pca_A adapt_index_pca_B adapt_index_pca_C transf_index_pca_2 if treatment==0
+
 *  HETEROGENITY ANALYSIS
 
 * study site 
@@ -119,7 +126,7 @@ foreach MUN of numlist 20313 50171 138060 160670  {
 
 foreach var of varlist $index $other $shock { 
 	ivreghdfe `var' (Dit_registered = Dit) if hhsize_2 == 0 , absorb(i.INTNO i.endline) cluster(final_cluster)
-	outreg2 using "late_panel_bysize.xls", append ctitle (small_`var')
+	outreg2 using "late_panel_bysizeTEST.xls", append ctitle (small_`var')
 }
 
 foreach var of varlist $index $other $shock { 
@@ -279,7 +286,7 @@ foreach var of varlist $index $other $shock $endline Rnegative_strat_climate Rcl
 		}
 		foreach var of varlist $index $other $endline loss_*_cl cl_strategy4 cl_strategy9 cl_strategy10 cl_strategy11 cl_strategy14 cl_strategy15 cl_strategy16 Rnegative_strat_climate Rcl_strategy9 Rcl_strategy10 Rcl_strategy15 Rcl_strategy16 {
 			ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & any_r_climshock1==1 , absorb(i.pair_rank) cluster(final_cluster)
-			outreg2 using "late_endline_byRshock.xls", append ctitle (noshock_`var')
+			outreg2 using "late_endline_byRshock.xls", append ctitle (shock_`var')
 		}
 
 /*
@@ -332,7 +339,7 @@ foreach var of varlist $index $other $endline $shock {
 	capture noisily ivreghdfe `var' (registered_walang_gutom = treatment) if endline == 1 & MUN==138060 & gaemi_0==1 , absorb(i.pair_rank) cluster(final_cluster)
 	display _rc
 	if _rc == 0 {
-		outreg2 using "late_endline_tondo.xls", append ctitle (tondo_noshock_`var')			
+		outreg2 using "late_endline_tondo.xls", append ctitle (tondo_shock_`var')			
 	}
 }
 
@@ -367,6 +374,22 @@ foreach MUN of numlist 20313 50171 138060 160670 190870 {
 		outreg2 using "food.xls", append ctitle (`MUN'_shock_`var')
 	}
 }
+
+* tondo - gaemi 
+	foreach var of varlist any_hunger_3mo hunger_frequent FIES_8 total2_food_1mo_php_pc  tot_non_food_expenses_pc  { 
+		ivreghdfe `var' (Dit_registered = Dit) if !missing(gaemi_0) , absorb(i.INTNO i.endline) cluster(final_cluster)
+		outreg2 using "food.xls", append ctitle (tondo_`var')
+	}	
+	foreach var of varlist any_hunger_3mo hunger_frequent FIES_8 total2_food_1mo_php_pc  tot_non_food_expenses_pc  { 
+		ivreghdfe `var' (Dit_registered = Dit) if  gaemi_0==0 , absorb(i.INTNO i.endline) cluster(final_cluster)
+		outreg2 using "food.xls", append ctitle (nogaemi_`var')
+	}
+	foreach var of varlist any_hunger_3mo hunger_frequent FIES_8 total2_food_1mo_php_pc  tot_non_food_expenses_pc  { 
+		ivreghdfe `var' (Dit_registered = Dit) if gaemi_0==1 , absorb(i.INTNO i.endline) cluster(final_cluster)
+		outreg2 using "food.xls", append ctitle (gaemi_`var')
+	}
+
+
 
 * endline
 

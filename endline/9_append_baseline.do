@@ -62,7 +62,8 @@ hh_bop has_savings value_extra_asset FIES_8 hh_network negative_strat_climate n_
 n_sources n_asset_types access_info good_debt no_negative_strat_climate crop_lives_fish hh_inclusion hh_socinsur hh_emprate ///
 exp_edu_pchild age_appr_edu_ratio ///
 any_debt bad_debt cantril_ladder resilience_climate_* subj_res_score* n_f_assets n_assets n_extra_assets n_asset_types n_jobs hh_farming ///
-any_climshock any_r_climshock month_2 Q13_3A7 Q13_3_A_7 loss_*_cl subj_res2v_* *cl_strategy* Rnegative_strat_climate strat_gaemi negative_strat_gaemi
+any_climshock any_r_climshock month_2 Q13_3A7 Q13_3_A_7 loss_*_cl subj_res2v_* *cl_strategy* Rnegative_strat_climate strat_gaemi negative_strat_gaemi ///
+n_child05 n_school_age hh_maxedu hh_depratio sex
 
 missings report 
 
