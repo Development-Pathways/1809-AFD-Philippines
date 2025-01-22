@@ -4,7 +4,7 @@
 // purpose: process APIS 2022
 
 global datafolder "~/Development Pathways Ltd/SEA - Data/philippines/APIS 2022/dta"
-global processed "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Exploratory analysis of ASP (Assignment 2)/Data/processed"
+global processed "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Exploratory analysis of ASP (Assignment 2)/Data"
 
 *** reshape ***
 
@@ -59,10 +59,17 @@ merge 1:1 REG HHID using "$datafolder/APIS PUF 2022 RTG4 - Government Feeding Pr
 * gvt services 
 
 * member record
-merge 1:m REG HHID using "$datafolder/APIS PUF 2022 Member Record.dta"
+merge 1:m REG HHID using "$datafolder/APIS PUF 2022 Member Record.dta", nogenerate
 order REG HHID C101_LNO-MEM_RFACT3, first 
 
 *** 
 
-save "$processed/APIS 2022 merged.dta", replace
+save "$processed/processed/APIS 2022 merged.dta", replace
+
+*** NAP ***
+
+import excel "$processed/NAP/NAP.xlsx", sheet("NAP-region") cellrange(A1:AK18) firstrow clear
+merge 1:m REG using "$processed/processed/APIS 2022 merged.dta"
+
+save "$processed/processed/APIS2022_merged_nap.dta", replace
 

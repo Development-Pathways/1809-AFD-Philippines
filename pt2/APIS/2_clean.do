@@ -8,8 +8,22 @@ use "$processed/APIS 2022 merged.dta", clear
 
 cap drop _merge
 
+replace URB = 2-URB
+
 * demographics
 
+replace H04_SEX = H04_SEX-1
+
+recode C05_AGE	(0/9=0 "0-9") (10/19=1 "10-19") (20/29=2 "20-29") (30/39=3 "30-39") ///
+			(40/49=4 "40-49") (50/59=5 "50-59") (60/69=6 "60-69") ///
+			(70/79=7 "70-79") (80/max=8 "80+"), gen(age10yrs)
+recode C05_AGE (0/4=0 "0-4") (5/9=1 "5-9") (10/14=2 "10-14") (15/19=3  "15-19") ///
+(20/24=4 "20-24") (25/29=5 "25-29") (30/34=6 "30-34") (35/39=7 "35-39") ///
+(40/44=8 "40-44") (45/49=9 "45-49") (50/54=10 "50-54") (55/59=11 "55-59") ///
+(60/64=12 "60-64") (65/69=13 "65-69") (70/74=14 "70-74") (75/79=15 "75-79") ///
+(80/max=16 "80+"), gen(age5yrs)
+
+			
 egen N_0_5 = sum(C05_AGE<=5), by(HHID)
 egen N_6_10 = sum(C05_AGE>=6 & C05_AGE<=10), by(HHID)
 egen N_11_14 = sum(C05_AGE>=11 & C05_AGE<=14), by(HHID)
@@ -38,18 +52,53 @@ egen n_prog = rowtotal(G5_*)
 * labour mkt intervention
 egen lab_mkt = rowmax(G9_1-G9_4)
 
+egen slp_4ps = rowmax(lab_mkt HH_4Ps)
+
 * feeding prog
 egen feed_prog = rowmax(G11_1 G11_2)
 
+* any programme
+
+egen any_prog = rowmax(G5_* lab_mkt feed_prog)
+
+* philhealth
+
+gen philhealth = (G13_PHEALTH==1|G13_PHEALTH==2) //paying or non-paying
+
+* disaster preparedness 
+
+destring G15A_TYPE_* G16A_EVAC G16B_RECOV G16C_HELP_A-G16C_HELP_F, replace
+
+replace G16_NAT_DISAS = 2-G16_NAT_DISAS
+replace G16A_EVAC = 2-G16A_EVAC
+replace G16B_RECOV = 2-G16B_RECOV
+
+* wash
+
+destring WS3 WS8 WS14 WS15 WS10_A-WS10_Z, replace
+gen no_water = (WS7==1)
+gen process_water = (WS9==1)
+replace WS15 = 2-WS15
+
+foreach var of varlist WS10_A-WS10_Z {
+	replace `var' =1 if !missing(`var')
+	replace `var' =0 if `var'!=1 & process_water==1
+}
+
 * welfare (self-reported)
 
-gen PC_INC = K5/FSIZE/6 // monthly per capita income 
+gen PC_INC = K5/FSIZE // average monthly per capita income jan-jun
 gen PC_FCONS = K4/FSIZE/6 // monthly per capita food consumption
 
+xtile INC_dec = PC_INC [aw=RFACT], n(10)
+xtile FCONS_dec = PC_FCONS [aw=RFACT], n(10)
+
 * assets 
-foreach item of varlist I9A-I9T { // recode from 1-2 to 0-1
+foreach item of varlist I8 I9A-I9T { // recode from 1-2 to 0-1
 	replace `item' = 2-`item'
 }
+
+egen n_asset_type = rowtotal(I9A-I9T)
 
 pca I9A-I9T
 predict pca_assets, score
@@ -88,6 +137,7 @@ predict yhat
 replace yhat = yhat_ncr if NCR==1 
 egen PMT = max(yhat), by(HHID)
 
+xtile PMT_dec = PMT [aw=RFACT], n(10)
 
 *** simulate WG ***
 gen WG=0
@@ -135,7 +185,7 @@ replace WG_1=1 if REG== 16 & rank<= 4
 tab REG WG_1 [iw=RFACT], row nofreq
 
 *** exclude 4Ps & SLP
-egen rank = rank(PMT) if HH_4P==0 & SLP==0, unique by (REG)
+egen rank2 = rank(PMT) if HH_4P==0 & lab_mkt==0, unique by (REG)
 
 gen WG_2=0
 replace WG_2=1 if REG== 2 & rank<= 7
@@ -150,6 +200,8 @@ replace WG_2=1 if REG== 13 & rank<= 2
 replace WG_2=1 if REG== 16 & rank<= 4
 
 tab REG WG_2 [iw=RFACT], row nofreq
+
+gen WG_region = (REG==2|REG==5|REG==6|REG==7|REG==8|REG==9|REG==10|REG==12|REG==13|REG==16)
 
 /*
 

@@ -344,3 +344,5 @@ graph box value_extra_asset if round==0, over(MUN)
 
 table () (MUN), statistic(mean $index ) nototals
 mean $index
+
+table () (MUN), statistic(mean Q16_*A) nototals
