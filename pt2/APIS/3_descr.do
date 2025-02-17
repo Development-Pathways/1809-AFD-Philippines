@@ -8,7 +8,7 @@ use "$processed/APIS 2022 processed.dta", clear
 
 * disaster recovery
 
-tabstat G16_NAT_DISAS G16B_RECOV [aw=RFACT], by(REG)
+tabstat G16_NAT_DISAS G16A_EVAC G16B_RECOV [aw=RFACT], by(REG)
 tabstat G16_NAT_DISAS G16B_RECOV [aw=RFACT] if WG==1 , by(REG)
 
 * shock associated with lower income
@@ -33,7 +33,9 @@ mean G16B_RECOV [aw=RFACT] /*if G16_NAT_DISAS==1*/ , over(WG)
 logit G16B_RECOV i.WG i.REG [iw=RFACT]
 margins WG
 
+**# Bookmark #1
 logit G16B_RECOV i.WG PC_INC FSIZE I2-I4 I8 WS1 WS2 n_prog2 H12_HGC  i.REG i.URB [iw=RFACT]
+outreg2 using "$processed/recovery.xls"
 margins WG
 
 
@@ -65,12 +67,20 @@ table () (WG) [aw=RFACT], statistic(mean URB FSIZE N_* H04_SEX H05_AGE G1_* G5_*
 table () (WG) [aw=RFACT], statistic(mean PC_INC PC_FCONS)  nformat(%5.0f)
 
 local vars URB FSIZE H04_SEX H05_AGE G1_* G5_* G9_* feed_prog philhealth n_prog G16_NAT_DISAS G16A_EVAC G16B_RECOV I6-I8 n_asset_type no_water process_water WS15 WS17 PC_INC PC_FCONS
-mean `vars' [aw=RFACT] // 43517
-mean `vars' [aw=RFACT] if HH_4Ps==1 // 7382
-mean `vars' [aw=RFACT] if lab_mkt==1 // 1736
-mean `vars' [aw=RFACT] if WG==1 // 562
-mean `vars' [aw=RFACT] if WG_1==1 // 562
-mean `vars' [aw=RFACT] if WG_2==1 // 562
+su `vars' [aw=RFACT] // 43517
+su `vars' [aw=RFACT] if HH_4Ps==1 // 7382
+su `vars' [aw=RFACT] if lab_mkt==1 // 1736
+su `vars' [aw=RFACT] if WG==1 // 562
+su `vars' [aw=RFACT] if WG_2==1 // 562
+
+egen either4p_wg = rowtotal(HH_4Ps WG_2)
+egen eitherslp_wg = rowtotal(lab_mkt WG_2)
+
+local vars URB FSIZE H04_SEX H05_AGE G1_* G5_* G9_* feed_prog philhealth n_prog G16_NAT_DISAS I6-I8 n_asset_type no_water process_water PC_INC PC_FCONS
+iebaltab `vars' [aw=RFACT] if either4p_wg==1 , grpvar(WG_2) onerow replace save("$processed/iebaltab/4ps_vs_wg.xlsx")
+iebaltab `vars' [aw=RFACT] if eitherslp_wg==1 , grpvar(WG_2) onerow replace save("$processed/iebaltab/slp_vs_wg.xlsx")
+
+
 
 table () (REG) if WG==1 [aw=RFACT], statistic(mean URB FSIZE H04_SEX H05_AGE G1_* G5_* G9_* feed_prog philhealth n_prog G16_NAT_DISAS G16A_EVAC G16B_RECOV I6-I8 n_asset_type no_water process_water WS15 WS17 )  nformat(%5.2f)
 table () (REG) if WG==1 [aw=RFACT], statistic(mean PC_INC PC_FCONS)  nformat(%5.0f)

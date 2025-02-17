@@ -106,15 +106,9 @@ gen cpi2023 = 122.175
 gen cpi2025 = 130.056
 gen WGtv = 3000 * cpi2023/cpi2025 if WG==1
 
-tabstat totfood_week WGtv if WG==1 [aw=RFACT], by(W_PROV)
-gen week_diff = totfood_week-WGtv
-
-**# Bookmark #2
 egen totex_wg = rowtotal(totex WGtv)
 egen totinc_wg = rowtotal(totinc WGtv)
 egen totfood_wg = rowtotal (totfood WGtv)
-
-egen totfood_week_wg = rowtotal(totfood_week WGtv)
 
 	gen wg_food = WGtv*share_FOOD
 	gen wg_nonfood =  WGtv*(1-share_FOOD)
@@ -138,13 +132,14 @@ mean *tot* [aw=RFACT] if WG==1
 
 tab decile_exp WG [aw=RFACT], col nofreq // distribution by decile
 
-tabstat d_totinc if WG==1 [aw=RFACT], by(W_PROV)
+	tabstat totfood totnonfood food_wg nonfood_wg d_food d_nonfood if WG==1 [aw=RFACT], by(W_PROV)
+	tabstat totfood totnonfood food_wg nonfood_wg d_food d_nonfood [aw=RFACT]
 
-**# Bookmark #1
-	tabstat totfood totnonfood food_wg nonfood_wg d_food d_nonfood [aw=RFACT], by(W_PROV)
-			
 ***
 * simulation with lumpiness * 
+
+gen week_diff = totfood_week-WGtv
+* egen totfood_week_wg = rowtotal(totfood_week WGtv)
 
 gen food_wg2 = WGtv + (totfood-totfood_week) + (share_FOOD*totfood_week) // WG in redemption week + 3 weeks of normal food consumption plus food consumption saved in WG week (food share)
 gen nonfood_wg2 = totnonfood + ((1-share_FOOD)*totfood_week) // normal non-food consumption plus food consumption saved in WG week (non-food share)
@@ -152,7 +147,22 @@ egen totex_wg2 = rowtotal(food_wg2 nonfood_wg2)
 
 gen sharefood_wg2 = food_wg2/totex_wg2
 
-	
+foreach var of varlist totex_wg2 food_wg2 nonfood_wg2 {
+	gen `var'_pc = `var'/FSIZE
+}
+
+gen d_food2 = (food_wg2_pc - totfood_pc)/totfood_pc
+gen d_nonfood2 = (nonfood_wg2_pc - totnonfood_pc)/totnonfood_pc
+gen d_totex2 = (totex_wg2_pc - totex_pc)/totex_pc
+
+br totfood totnonfood totex share_FOOD totfood_week WGtv food_wg2 nonfood_wg2 totex_wg2 sharefood_wg2 if WG==1
+
+* check that the new total consumption is old consumption plus WG
+* assert round(totex_wg2)==round(totex_wg) // false but looks true to me
+
+tabstat totfood totnonfood totex food_wg2 nonfood_wg2 totex_wg2 d_*2 share_FOOD sharefood_wg2 if WG==1 [aw=RFACT], by(W_PROV)
+
+
 ***	
 
 	* targeting 
@@ -187,7 +197,8 @@ gen pov_exp_wg = totex_wg_pc<(povline/12)
 
 mean pov* [aw=RFACT] if WG==1
 
-tabstat pov_inc* if WG==1 [aw=RFACT], by(W_PROV)
+tabstat pov_inc* d_totinc if WG==1 [aw=RFACT], by(W_PROV)
+mean pov_inc [aw=RFACT] if cotabato_barmm==1
 
 * share of poor covered by WG
 
