@@ -4,7 +4,7 @@
 // purpose: process APIS 2022
 
 global processed "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Exploratory analysis of ASP (Assignment 2)/Data/processed"
-use "$processed/APIS 2022 merged.dta", clear
+use "$processed/APIS2022_merged_nap.dta", clear
 
 cap drop _merge
 
@@ -60,6 +60,10 @@ egen feed_prog = rowmax(G11_1 G11_2)
 * any programme
 
 egen any_prog = rowmax(G5_* lab_mkt feed_prog)
+egen any_prog159 = rowmax(G1_* G5_* G9_*)
+egen any_prog59 = rowmax(G5_* G9_*)
+
+egen n_prog2 = rowtotal(G5_* lab_mkt feed_prog)
 
 * philhealth
 
@@ -131,8 +135,10 @@ local assets I9J I9G I9P I9M I9N I9R I9S I9O I9A-I9D
 *reg ln_inc `household' `assets' URB `individual' if NCR==1 [aw = RFACT], robust
 
 reg ln_inc `household' `assets' URB H05_AGE H12_HGC N_* if NCR==1 [aw = RFACT], robust
+outreg2 using "$processed/pmt.xls"
 predict yhat_ncr
 reg ln_inc `household' `assets' URB H05_AGE H12_HGC N_*  i.REG if NCR==0 [aw = RFACT], robust
+outreg2 using "$processed/pmt.xls", append
 predict yhat
 replace yhat = yhat_ncr if NCR==1 
 egen PMT = max(yhat), by(HHID)
@@ -149,20 +155,20 @@ _pctile PMT if REG==	5	[iw=RFACT], p(	2.24	)
 replace WG = PMT < r(r1) if REG == 5
 _pctile PMT if REG==	6	[iw=RFACT], p(	2.22	)
 replace WG = PMT < r(r1) if REG == 6
-_pctile PMT if REG==	7	[iw=RFACT], p(	1.62	)
+_pctile PMT if REG==	7	[iw=RFACT], p(	1.61	)
 replace WG = PMT < r(r1) if REG == 7
 _pctile PMT if REG==	8	[iw=RFACT], p(	4.46	)
 replace WG = PMT < r(r1) if REG == 8
-_pctile PMT if REG==	9	[iw=RFACT], p(	10.02	)
+_pctile PMT if REG==	9	[iw=RFACT], p(	10.01	)
 replace WG = PMT < r(r1) if REG == 9
 _pctile PMT if REG==	10	[iw=RFACT], p(	0.77	)
 replace WG = PMT < r(r1) if REG == 10				
-_pctile PMT if REG==	12	[iw=RFACT], p(	3.91	)
-replace WG = PMT < r(r1) if REG == 12
+_pctile PMT if REG==	15	[iw=RFACT], p(	4.99	)
+replace WG = PMT < r(r1) if REG == 15
 _pctile PMT if REG==	16	[iw=RFACT], p(	0.21	)
 replace WG = PMT < r(r1) if REG == 16
 
-tab REG WG [iw=RFACT], row nofreq
+tab REG WG //[iw=RFACT], row nofreq
 tab WG [iw=RFACT]
 
 *** exclude 4Ps 
@@ -178,7 +184,7 @@ replace WG_1=1 if REG== 7 & rank<= 33
 replace WG_1=1 if REG== 8 & rank<= 127
 replace WG_1=1 if REG== 9 & rank<= 188
 replace WG_1=1 if REG== 10 & rank<= 21
-replace WG_1=1 if REG== 12 & rank<= 83
+replace WG_1=1 if REG== 15 & rank<= 115
 replace WG_1=1 if REG== 13 & rank<= 2
 replace WG_1=1 if REG== 16 & rank<= 4
 
@@ -188,20 +194,34 @@ tab REG WG_1 [iw=RFACT], row nofreq
 egen rank2 = rank(PMT) if HH_4P==0 & lab_mkt==0, unique by (REG)
 
 gen WG_2=0
-replace WG_2=1 if REG== 2 & rank<= 7
-replace WG_2=1 if REG== 5 & rank<= 53
-replace WG_2=1 if REG== 6 & rank<= 44
-replace WG_2=1 if REG== 7 & rank<= 33
-replace WG_2=1 if REG== 8 & rank<= 127
-replace WG_2=1 if REG== 9 & rank<= 188
-replace WG_2=1 if REG== 10 & rank<= 21
-replace WG_2=1 if REG== 12 & rank<= 83
-replace WG_2=1 if REG== 13 & rank<= 2
-replace WG_2=1 if REG== 16 & rank<= 4
+replace WG_2=1 if REG== 2 & rank2<= 7
+replace WG_2=1 if REG== 5 & rank2<= 53
+replace WG_2=1 if REG== 6 & rank2<= 44
+replace WG_2=1 if REG== 7 & rank2<= 33
+replace WG_2=1 if REG== 8 & rank2<= 127
+replace WG_2=1 if REG== 9 & rank2<= 188
+replace WG_2=1 if REG== 10 & rank2<= 21
+replace WG_2=1 if REG== 15 & rank2<= 115
+replace WG_2=1 if REG== 13 & rank2<= 2
+replace WG_2=1 if REG== 16 & rank2<= 4
 
 tab REG WG_2 [iw=RFACT], row nofreq
 
-gen WG_region = (REG==2|REG==5|REG==6|REG==7|REG==8|REG==9|REG==10|REG==12|REG==13|REG==16)
+gen WG_region = (REG==2|REG==5|REG==6|REG==7|REG==8|REG==9|REG==10|REG==15|REG==13|REG==16)
+
+/* simulate change in food consumption 
+	* monhtly transfers higher than average food consumption over 6 months (K4)
+gen cpi2022 = 115.283
+gen cpi2025 = 130.056
+gen WGtv = 3000 * cpi2022/cpi2025 if WG==1
+gen WGtv_pc = WGtv/FSIZE
+
+egen food_wg = rowtotal(PC_FCONS WGtv)
+
+gen d_food = (food_wg-PC_FCONS)/PC_FCONS
+
+su K4 WGtv WGtv_pc PC_FCONS food_wg d_food [aw=RFACT] //if WG==1
+*/
 
 /*
 

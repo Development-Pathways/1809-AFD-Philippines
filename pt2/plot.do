@@ -1,3 +1,4 @@
+global processed "~/Development Pathways Ltd/PHL_AFD_2024_Walang Gutom - Technical/Exploratory analysis of ASP (Assignment 2)/Data"
 global darkblue 	"0 57 114"
 global darkorange 	"239 93 59"
 global lightgrey 	"242 242 242"
